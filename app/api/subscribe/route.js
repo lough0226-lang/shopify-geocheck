@@ -29,13 +29,12 @@ export async function POST(request) {
       }),
     });
 
-    let contactStatus = 'added';
     if (!contactRes.ok) {
       const errData = await contactRes.json();
       if (errData.code !== 'duplicate_parameter') {
-        return NextResponse.json({ success: false, error: 'Contact failed: ' + errData.message }, { status: 500 });
+        console.error('Brevo contact error:', errData);
+        return NextResponse.json({ success: false, error: errData.message }, { status: 500 });
       }
-      contactStatus = 'already_exists';
     }
 
     // 2. 发送欢迎邮件
@@ -46,27 +45,21 @@ export async function POST(request) {
         'api-key': BREVO_API_KEY,
       },
       body: JSON.stringify({
-        sender: { name: 'My GEO Check', email: 'lough0226@gmail.com' },
+        sender: { name: 'My GEO Check', email: 'hello@mygeocheck.com' },
         to: [{ email: email }],
         subject: 'Welcome to My GEO Check',
         htmlContent: '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;"><h1 style="color:#6366f1;">Welcome to My GEO Check!</h1><p>Thank you for subscribing! You are now on the list to receive the latest GEO/AEO insights and updates.</p><div style="background:#f3f4f6;padding:20px;border-radius:8px;margin:20px 0;"><h2 style="color:#6366f1;margin-top:0;">What is GEO?</h2><p><strong>Generative Engine Optimization (GEO)</strong> is the new SEO. As AI-powered search engines like ChatGPT, Perplexity, and Google AI Overviews become the primary way people discover products, optimizing your store content for AI citations is essential.</p></div><p style="font-size:14px;color:#888;text-align:center;margin-top:30px;">&copy; 2026 My GEO Check. All rights reserved.<br/><a href="https://mygeocheck.com" style="color:#6366f1;">mygeocheck.com</a></p></div>',
       }),
     });
 
-    const emailResult = await emailRes.json();
-    const emailStatus = emailRes.ok ? 'sent' : 'failed';
+    if (!emailRes.ok) {
+      const emailErr = await emailRes.json();
+      console.error('Brevo email error:', emailErr);
+    }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Subscribed successfully',
-      debug: {
-        contact: contactStatus,
-        email: emailStatus,
-        emailStatusCode: emailRes.status,
-        emailResult: emailResult
-      }
-    });
+    return NextResponse.json({ success: true, message: 'Subscribed successfully' });
   } catch (error) {
-    return NextResponse.json({ success: false, error: 'Server error: ' + error.message }, { status: 500 });
+    console.error('Subscribe error:', error);
+    return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
   }
 }
