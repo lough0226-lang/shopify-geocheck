@@ -13,7 +13,7 @@ export const metadata = {
   alternates: {
     canonical: 'https://mygeocheck.com/blog',
     types: {
-      'application/rss+xml': 'https://mygeocheck.com/feed.xml',
+      'application/rss+xml': 'https://mygeocheck.com/rss',
     },
   },
 };
@@ -32,7 +32,7 @@ export default function BlogPage() {
             Practical articles on how Shopify stores can win visibility in AI-powered search engines like ChatGPT, Perplexity, and Google AI Overviews.
           </p>
           <a
-            href="/feed.xml"
+            href="/rss"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 mt-6 text-primary-300 hover:text-white text-sm transition-colors"
