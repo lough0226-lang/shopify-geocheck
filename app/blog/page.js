@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getAllPosts } from '../../lib/posts';
+import { getAllPosts, getAllTags } from '../../lib/posts';
 
 export const metadata = {
   title: 'Blog - GEO & AI Search Insights for Shopify Merchants | My GEO Check',
@@ -12,26 +12,66 @@ export const metadata = {
   },
   alternates: {
     canonical: 'https://mygeocheck.com/blog',
+    types: {
+      'application/rss+xml': 'https://mygeocheck.com/feed.xml',
+    },
   },
 };
 
 export default function BlogPage() {
   const allPosts = getAllPosts();
+  const allTags = getAllTags();
 
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Hero */}
       <section className="bg-primary-800 text-white py-16">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">GEO & AI Search Insights</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">GEO &amp; AI Search Insights</h1>
           <p className="text-primary-200 text-lg max-w-2xl mx-auto">
             Practical articles on how Shopify stores can win visibility in AI-powered search engines like ChatGPT, Perplexity, and Google AI Overviews.
           </p>
+          <a
+            href="/feed.xml"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 mt-6 text-primary-300 hover:text-white text-sm transition-colors"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6.18 15.64a2.18 2.18 0 012.18 2.18C8.36 19 7.38 20 6.18 20C5 20 4 19 4 17.82a2.18 2.18 0 012.18-2.18M4 4.44A15.56 15.56 0 0119.56 20h-2.83A12.73 12.73 0 004 7.27V4.44m0 5.66a9.9 9.9 0 019.9 9.9h-2.83A7.07 7.07 0 004 12.93V10.1z"/>
+            </svg>
+            RSS Feed
+          </a>
         </div>
       </section>
 
-      {/* Posts */}
       <section className="max-w-4xl mx-auto px-4 py-12">
+        {/* Tags filter */}
+        <div className="mb-10">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Browse by topic</h2>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/blog"
+              className="text-sm px-4 py-1.5 rounded-full bg-primary-700 text-white transition-colors"
+            >
+              All
+            </Link>
+            {allTags.map((tag) => {
+              const slug = tag.toLowerCase().replace(/\s+/g, '-');
+              return (
+                <Link
+                  key={tag}
+                  href={`/blog/tag/${slug}`}
+                  className="text-sm px-4 py-1.5 rounded-full bg-white text-gray-600 border border-gray-200 hover:border-primary-300 hover:text-primary-700 transition-colors"
+                >
+                  {tag}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Posts */}
         <div className="space-y-8">
           {allPosts.map((post) => (
             <article

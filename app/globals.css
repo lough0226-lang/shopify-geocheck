@@ -174,3 +174,9 @@ body {
 .prose em {
   font-style: italic;
 }
+
+/* Scroll offset for anchor links (fixed header) */
+.prose h2[id],
+.prose h3[id] {
+  scroll-margin-top: 100px;
+}
