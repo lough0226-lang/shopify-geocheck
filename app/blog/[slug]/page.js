@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAllPosts, getPostBySlug, getRelatedPosts, extractHeadings, addHeadingIds, getWordCount, author } from '../../../lib/posts';
 import ReadingProgress from '../../../components/ReadingProgress';
+import Newsletter from '../../../components/Newsletter';
 
 export async function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
@@ -237,6 +238,11 @@ export default function BlogPostPage({ params }) {
               Reddit
             </a>
           </div>
+        </div>
+
+        {/* Newsletter */}
+        <div className="mt-8">
+          <Newsletter />
         </div>
 
         {/* Author bio */}
