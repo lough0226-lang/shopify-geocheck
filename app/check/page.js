@@ -222,6 +222,14 @@ export default function CheckPage() {
 
   function handleAnalyze(e) {
     e.preventDefault();
+
+    // Concurrent request protection: block if another analysis is in progress
+    if (window.__geoAnalyzing) {
+      setError(t.errorBusy);
+      return;
+    }
+    window.__geoAnalyzing = true;
+
     setError('');
     setResults(null);
 
@@ -260,7 +268,13 @@ export default function CheckPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: inputUrl }),
       })
-      .then(function(res) { return res.json(); })
+      .then(function(res) {
+        // Detect 504/503 timeout errors from Vercel concurrency limits
+        if (res.status === 504 || res.status === 503) {
+          throw new Error('__TIMEOUT__');
+        }
+        return res.json();
+      })
       .then(function(data) {
         if (!data.success) {
           throw new Error(data.error || t.errorGeneric);
@@ -322,12 +336,18 @@ export default function CheckPage() {
       if (analysisIdRef.current !== currentId) return;
       console.error('Analysis error:', err);
       setResults(null); // 清除旧结果，防止显示之前的报告
-      setError(err.message || t.errorGeneric);
+      // Show specific message for 504/503 timeout errors
+      if (err.message === '__TIMEOUT__') {
+        setError(t.errorTimeout);
+      } else {
+        setError(err.message || t.errorGeneric);
+      }
     })
     .finally(function() {
       if (analysisIdRef.current !== currentId) return;
       clearInterval(msgInterval);
       setLoading(false);
+      window.__geoAnalyzing = false; // Release concurrent lock
     });
   }
 
