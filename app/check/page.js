@@ -292,6 +292,13 @@ export default function CheckPage() {
   function handleCheckout() {
     if (!results || !results.report_id) return;
 
+    // Store report_id and email for success page (in case email delivery fails)
+    try {
+      localStorage.setItem('last_payment_report_id', results.report_id);
+      var emailEl = document.getElementById('geo-email-input');
+      if (emailEl && emailEl.value) localStorage.setItem('last_payment_email', emailEl.value.trim());
+    } catch(e) {}
+
     // Set loading state for checkout
     setLoading(true);
     setLoadingText('Redirecting to secure checkout...');

@@ -23,6 +23,8 @@ export default function ReportPage() {
   var [error, setError] = useState('');
   var [paymentVerified, setPaymentVerified] = useState(false);
   var [orderId, setOrderId] = useState('');
+  var [emailStatus, setEmailStatus] = useState(''); // '' | 'sending' | 'sent' | 'error'
+  var [emailMsg, setEmailMsg] = useState('');
 
   useEffect(function() {
     // Detect Creem payment success redirect
@@ -157,6 +159,34 @@ export default function ReportPage() {
   var failCount = checks.filter(function(c) { return c.status === 'fail'; }).length;
   var totalChecks = checks.length || 1;
 
+  function handleEmailReport() {
+    var addr = prompt('Enter your email address to receive this report:');
+    if (!addr || !addr.includes('@')) return;
+    setEmailStatus('sending');
+    setEmailMsg('');
+    fetch('/api/resend-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ report_id: reportId, email: addr }),
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (res.ok) {
+        setEmailStatus('sent');
+        setEmailMsg('✅ Sent! Check your inbox (and spam folder)');
+      } else {
+        setEmailStatus('error');
+        setEmailMsg('❌ ' + (res.data.error || 'Failed. Contact hello@mygeocheck.com'));
+      }
+      setTimeout(function() { setEmailStatus(''); setEmailMsg(''); }, 5000);
+    })
+    .catch(function() {
+      setEmailStatus('error');
+      setEmailMsg('❌ Network error. Contact hello@mygeocheck.com');
+      setTimeout(function() { setEmailStatus(''); setEmailMsg(''); }, 5000);
+    });
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
       {/* Header */}
@@ -181,6 +211,26 @@ export default function ReportPage() {
           GEO Analysis Report
         </h1>
         <p style={{ fontSize: 14, color: '#8bb5db', margin: 0 }}>{productName}</p>
+        <div style={{ marginTop: 16 }}>
+          <button
+            onClick={handleEmailReport}
+            disabled={emailStatus === 'sending'}
+            style={{
+              background: emailStatus === 'sending' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.15)',
+              color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
+              padding: '8px 20px', borderRadius: 6, fontSize: 13, fontWeight: 500,
+              cursor: emailStatus === 'sending' ? 'wait' : 'pointer',
+            }}
+          >
+            {emailStatus === 'sending' ? '⏳ Sending...' : '📧 Email This Report'}
+          </button>
+          {emailMsg && (
+            <p style={{
+              fontSize: 13, marginTop: 8, marginBottom: 0,
+              color: emailStatus === 'sent' ? '#86efac' : '#fca5a5',
+            }}>{emailMsg}</p>
+          )}
+        </div>
       </section>
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 16px' }}>
