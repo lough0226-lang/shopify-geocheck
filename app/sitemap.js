@@ -1,36 +1,36 @@
 export default function sitemap() {
-  const baseUrl = 'https://mygeocheck.com';
+  const baseUrl = 'https://mygeocheck.com'
 
   return [
     {
-      url: baseUrl,
-      lastModified: new Date(),
+      url: `${baseUrl}/`,
+      lastModified: new Date('2026-08-25'),
       changeFrequency: 'weekly',
       priority: 1.0,
     },
     {
-      url: baseUrl + '/check',
-      lastModified: new Date(),
+      url: `${baseUrl}/check`,
+      lastModified: new Date('2026-08-25'),
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: baseUrl + '/#how-it-works',
-      lastModified: new Date(),
+      url: `${baseUrl}/privacy`,
+      lastModified: new Date('2026-08-25'),
       changeFrequency: 'monthly',
-      priority: 0.7,
+      priority: 0.3,
     },
     {
-      url: baseUrl + '/#pricing',
-      lastModified: new Date(),
+      url: `${baseUrl}/terms`,
+      lastModified: new Date('2026-08-25'),
       changeFrequency: 'monthly',
-      priority: 0.6,
+      priority: 0.3,
     },
     {
-      url: baseUrl + '/#faq',
-      lastModified: new Date(),
+      url: `${baseUrl}/success`,
+      lastModified: new Date('2026-08-25'),
       changeFrequency: 'monthly',
-      priority: 0.5,
+      priority: 0.2,
     },
-  ];
+  ]
 }
