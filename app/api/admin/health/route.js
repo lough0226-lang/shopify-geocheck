@@ -9,7 +9,7 @@ import {
   sendFallbackEmail,
 } from '../../webhook/route.js';
 
-import { recordWebhookFailure, getFailureStats } from '../../../lib/health-monitor.js';
+import { recordWebhookFailure, getFailureStats } from '../../../../lib/health-monitor.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
