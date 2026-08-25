@@ -1,8 +1,9 @@
-import { getAllPosts } from '../lib/posts';
+import { getAllPosts, getAllTags } from '../lib/posts';
 
 export default function sitemap() {
   const baseUrl = 'https://mygeocheck.com';
   const posts = getAllPosts();
+  const tags = getAllTags();
 
   const staticPages = [
     {
@@ -44,5 +45,12 @@ export default function sitemap() {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...blogPosts];
+  const tagPages = tags.map((tag) => ({
+    url: `${baseUrl}/blog/tag/${tag.toLowerCase().replace(/\s+/g, '-')}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.5,
+  }));
+
+  return [...staticPages, ...blogPosts, ...tagPages];
 }

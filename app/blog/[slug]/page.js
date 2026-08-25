@@ -136,12 +136,13 @@ export default function BlogPostPage({ params }) {
             {post.tags.map((tag) => {
               const tagSlug = tag.toLowerCase().replace(/\s+/g, '-');
               return (
-                <span
+                <Link
                   key={tag}
-                  className="text-xs font-medium bg-primary-700 text-primary-200 px-3 py-1 rounded-full"
+                  href={`/blog/tag/${tagSlug}`}
+                  className="text-xs font-medium bg-primary-700 hover:bg-primary-600 text-primary-200 hover:text-white px-3 py-1 rounded-full transition-colors"
                 >
                   {tag}
-                </span>
+                </Link>
               );
             })}
           </div>
@@ -178,14 +179,18 @@ export default function BlogPostPage({ params }) {
         <div className="mt-10 pt-6 border-t border-gray-200">
           <div className="flex flex-wrap gap-2">
             <span className="text-sm text-gray-500 mr-2">Tagged:</span>
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className="text-xs font-medium bg-gray-100 text-gray-600 px-3 py-1 rounded-full"
-              >
-                #{tag}
-              </span>
-            ))}
+            {post.tags.map((tag) => {
+              const tagSlug = tag.toLowerCase().replace(/\s+/g, '-');
+              return (
+                <Link
+                  key={tag}
+                  href={`/blog/tag/${tagSlug}`}
+                  className="text-xs font-medium bg-gray-100 hover:bg-primary-100 text-gray-600 hover:text-primary-700 px-3 py-1 rounded-full transition-colors"
+                >
+                  #{tag}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
