@@ -315,6 +315,7 @@ export default function CheckPage() {
     })
     .catch(function(err) {
       console.error('Analysis error:', err);
+      setResults(null); // 清除旧结果，防止显示之前的报告
       setError(err.message || t.errorGeneric);
     })
     .finally(function() {
