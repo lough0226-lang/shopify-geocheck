@@ -30,6 +30,12 @@ export default function Footer() {
               <a href="/#how-it-works" className="hover:text-white transition-colors">How It Works</a>
               <a href="/#faq" className="hover:text-white transition-colors">FAQ</a>
               <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
+              <a href="/rss" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center gap-1">
+                RSS
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6.18 15.64a2.18 2.18 0 012.18 2.18C8.36 19 7.38 20 6.18 20C5 20 4 19 4 17.82a2.18 2.18 0 012.18-2.18M4 4.44A15.56 15.56 0 0119.56 20h-2.83A12.73 12.73 0 004 7.27V4.44m0 5.66a9.9 9.9 0 019.9 9.9h-2.83A7.07 7.07 0 004 12.93V10.1z"/>
+                </svg>
+              </a>
             </nav>
           </div>
 
