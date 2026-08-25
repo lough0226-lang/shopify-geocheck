@@ -1,14 +1,17 @@
-// LemonSqueezy 支付创建 API
+// Creem.io Payment Integration - Checkout Session Creator
 import { NextResponse } from 'next/server';
 
-// 强制使用 Node.js 运行时
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/payment
- * 创建 LemonSqueezy checkout 链接
+ * Creates a Creem checkout session for the GEO Visibility Report
  * Body: { report_id: string, email?: string }
+ *
+ * Required env vars:
+ *   CREEM_API_KEY     - Creem API key (from Developers section of dashboard)
+ *   CREEM_PRODUCT_ID  - Product ID for the $29 GEO report
  */
 export async function POST(request) {
   try {
@@ -21,69 +24,54 @@ export async function POST(request) {
       );
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const apiKey = process.env.CREEM_API_KEY;
+    const productId = process.env.CREEM_PRODUCT_ID;
 
-    // 构建 LemonSqueezy checkout 请求
-    const checkoutData = {
-      data: {
-        type: 'checkouts',
-        attributes: {
-          checkout_data: {
-            custom_price: 2900,
-          },
-        },
-        relationships: {
-          store: {
-            data: {
-              type: 'stores',
-              id: process.env.LEMONSQUEEZY_STORE_ID || '',
-            },
-          },
-          variant: {
-            data: {
-              type: 'variants',
-              id: process.env.LEMONSQUEEZY_PRODUCT_ID || '',
-            },
-          },
-        },
+    if (!apiKey) {
+      console.error('CREEM_API_KEY not configured');
+      return NextResponse.json(
+        { error: 'Payment service not configured. Please try again later.' },
+        { status: 500 }
+      );
+    }
+
+    if (!productId) {
+      console.error('CREEM_PRODUCT_ID not configured');
+      return NextResponse.json(
+        { error: 'Product not found. Please try again later.' },
+        { status: 500 }
+      );
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mygeocheck.com';
+
+    // Build Creem checkout request
+    const checkoutPayload = {
+      product_id: productId,
+      success_url: `${baseUrl}/report/${report_id}?checkout_id={CHECKOUT_ID}&order_id={ORDER_ID}&status=success`,
+      metadata: {
+        report_id: report_id,
+        source: 'mygeocheck.com',
       },
     };
 
-    if (report_id) {
-      checkoutData.data.attributes.custom_price = 2900;
-      checkoutData.data.attributes.product_options = {
-        redirect_url: `${baseUrl}/report/${report_id}`,
-        receipt_button_text: 'View My Report',
-        receipt_link_url: `${baseUrl}/report/${report_id}`,
-        receipt_thank_you_note: `Your full GEO report for report ID: ${report_id}`,
-      };
+    // Add customer email if provided (pre-fills checkout form)
+    if (email) {
+      checkoutPayload.customer = { email: email };
     }
 
-    const response = await fetch('https://api.lemonsqueezy.com/v1/checkouts', {
+    const response = await fetch('https://api.creem.io/v1/checkouts', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.LEMONSQUEEZY_API_KEY}`,
-        'Content-Type': 'application/vnd.api+json',
-        'Accept': 'application/vnd.api+json',
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(checkoutData),
+      body: JSON.stringify(checkoutPayload),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('LemonSqueezy API error:', errorText);
-
-      const storeId = process.env.LEMONSQUEEZY_STORE_ID;
-      const productId = process.env.LEMONSQUEEZY_PRODUCT_ID;
-      if (storeId && productId) {
-        const fallbackUrl = `https://store.lemonsqueezy.com/checkout/buy/${storeId}-${productId}`;
-        return NextResponse.json({
-          checkout_url: fallbackUrl,
-          report_id,
-          note: 'Using fallback checkout URL',
-        });
-      }
-
+      const errorData = await response.text();
+      console.error('Creem API error:', response.status, errorData);
       return NextResponse.json(
         { error: 'Failed to create checkout. Please try again later.' },
         { status: 500 }
@@ -91,9 +79,10 @@ export async function POST(request) {
     }
 
     const data = await response.json();
-    const checkoutUrl = data.data?.attributes?.url;
+    const checkoutUrl = data.checkout_url;
 
     if (!checkoutUrl) {
+      console.error('Creem response missing checkout_url:', data);
       return NextResponse.json(
         { error: 'Failed to generate checkout URL' },
         { status: 500 }
@@ -102,6 +91,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       checkout_url: checkoutUrl,
+      checkout_id: data.id,
       report_id,
     });
   } catch (error) {

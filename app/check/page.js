@@ -291,7 +291,34 @@ export default function CheckPage() {
 
   function handleCheckout() {
     if (!results || !results.report_id) return;
-    router.push('/report/' + results.report_id);
+
+    // Set loading state for checkout
+    setLoading(true);
+    setLoadingText('Redirecting to secure checkout...');
+
+    fetch('/api/payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ report_id: results.report_id }),
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.checkout_url) {
+        // Redirect to Creem checkout
+        window.location.href = data.checkout_url;
+      } else {
+        // Payment not configured yet — show report page (free mode)
+        router.push('/report/' + results.report_id);
+      }
+    })
+    .catch(function(err) {
+      console.error('Checkout error:', err);
+      // Fallback to report page
+      router.push('/report/' + results.report_id);
+    })
+    .finally(function() {
+      setLoading(false);
+    });
   }
 
   var freeIssues = (results && Array.isArray(results.free_issues)) ? results.free_issues : [];

@@ -35,18 +35,18 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-3 text-sm">Support</h4>
             <nav className="flex flex-col gap-2 text-sm text-primary-300">
-              <a href="mailto:support@shopifygeocheck.com" className="hover:text-white transition-colors">
+              <a href="mailto:hello@mygeocheck.com" className="hover:text-white transition-colors">
                 Contact Us
               </a>
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
             </nav>
           </div>
         </div>
 
         <div className="border-t border-primary-600 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-primary-400 text-sm">
-            © {new Date().getFullYear()} GEOCheck. All rights reserved.
+            © {new Date().getFullYear()} My GEO Check. All rights reserved.
           </p>
           <p className="text-primary-400 text-xs">
             Built for Shopify merchants who want to win in AI search.

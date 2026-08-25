@@ -21,8 +21,21 @@ export default function ReportPage() {
   var [report, setReport] = useState(null);
   var [loading, setLoading] = useState(true);
   var [error, setError] = useState('');
+  var [paymentVerified, setPaymentVerified] = useState(false);
+  var [orderId, setOrderId] = useState('');
 
   useEffect(function() {
+    // Detect Creem payment success redirect
+    if (typeof window !== 'undefined') {
+      var search = new URLSearchParams(window.location.search);
+      var status = search.get('status');
+      var oid = search.get('order_id');
+      if (status === 'success' && oid) {
+        setPaymentVerified(true);
+        setOrderId(oid);
+      }
+    }
+
     if (!reportId) {
       setError('No report ID provided');
       setLoading(false);
@@ -155,6 +168,15 @@ export default function ReportPage() {
         }}>
           {'\u2705'} FULL REPORT {'\u2014'} UNLOCKED
         </div>
+        {paymentVerified && (
+          <div style={{
+            display: 'block', fontSize: 11, fontWeight: 500,
+            padding: '4px 10px', borderRadius: 999, marginBottom: 12,
+            background: 'rgba(34,197,94,0.15)', color: '#86efac',
+          }}>
+            {'\u{1F4B3}'} Payment Verified — Order: {orderId}
+          </div>
+        )}
         <h1 style={{ fontSize: 36, fontWeight: 700, color: '#fff', marginBottom: 8, marginTop: 0 }}>
           GEO Analysis Report
         </h1>

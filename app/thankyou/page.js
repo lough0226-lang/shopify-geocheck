@@ -25,7 +25,7 @@ export default function ThankYouPage() {
 
           <div className="mt-8 pt-6 border-t border-gray-100">
             <p className="text-xs text-gray-400">
-              If you don&apos;t see your report, please contact us at support@shopifygeocheck.com
+              If you don&apos;t see your report, please contact us at <a href="mailto:hello@mygeocheck.com" style={{color:'#6366f1'}}>hello@mygeocheck.com</a>
             </p>
           </div>
         </div>
