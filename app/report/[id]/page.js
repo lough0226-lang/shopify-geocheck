@@ -51,9 +51,16 @@ export default function ReportPage() {
 
         if (localData) {
           var parsed = JSON.parse(localData);
-          setReport(parsed);
-          setLoading(false);
-          return;
+          var storedAt = parsed.stored_at || 0;
+          var now = Date.now();
+          if (now - storedAt > 24 * 60 * 60 * 1000) {
+            localStorage.removeItem(localKey);
+            // fall through to API fetch
+          } else {
+            setReport(parsed);
+            setLoading(false);
+            return;
+          }
         }
 
         fetch('/api/analyze?report_id=' + reportId)

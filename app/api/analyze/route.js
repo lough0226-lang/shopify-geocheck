@@ -61,9 +61,16 @@ function recordApiCall() {
  * 生成降级结果（AI 分析完全失败时使用）
  */
 function generateFallbackAnalysis(productData, url) {
+  let fallbackProductName = 'Product';
+  try {
+    const parsedUrl = new URL(url);
+    fallbackProductName = parsedUrl.hostname.replace('www.', '');
+  } catch(e) {
+    fallbackProductName = productData?.title || 'Product';
+  }
   return {
     score: 50,
-    product_name: productData?.title || 'Product',
+    product_name: fallbackProductName,
     store_name: '',
     free_issues: [
       {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Component } from 'react';
+import { useState, useEffect, useRef, Component } from 'react';
 import { useRouter } from 'next/navigation';
 import translations, { LANGUAGES } from '@/lib/i18n';
 
@@ -195,6 +195,7 @@ export default function CheckPage() {
   var [results, setResults] = useState(null);
   var [loadingText, setLoadingText] = useState('');
   var [lang, setLang] = useState('en');
+  var analysisIdRef = useRef(0);
 
   useEffect(function() {
     var initialLang = detectLanguage();
@@ -223,6 +224,9 @@ export default function CheckPage() {
     e.preventDefault();
     setError('');
     setResults(null);
+
+    var currentId = Date.now();
+    analysisIdRef.current = currentId;
 
     var inputUrl = url.trim();
     if (!inputUrl) {
@@ -310,15 +314,18 @@ export default function CheckPage() {
       return data;
     })
     .then(function(finalData) {
+      if (analysisIdRef.current !== currentId) return;
       saveReport(finalData);
       setResults(finalData);
     })
     .catch(function(err) {
+      if (analysisIdRef.current !== currentId) return;
       console.error('Analysis error:', err);
       setResults(null); // 清除旧结果，防止显示之前的报告
       setError(err.message || t.errorGeneric);
     })
     .finally(function() {
+      if (analysisIdRef.current !== currentId) return;
       clearInterval(msgInterval);
       setLoading(false);
     });

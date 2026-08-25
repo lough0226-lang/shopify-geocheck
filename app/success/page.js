@@ -13,13 +13,25 @@ export default function SuccessPage() {
   useEffect(function() {
     if (typeof window !== 'undefined') {
       var search = new URLSearchParams(window.location.search);
+      var status = search.get('status') || '';
+      var oid = search.get('order_id') || '';
       setParams({
         checkout_id: search.get('checkout_id') || '',
-        order_id: search.get('order_id') || '',
+        order_id: oid,
         customer_id: search.get('customer_id') || '',
         product_id: search.get('product_id') || '',
-        status: search.get('status') || '',
+        status: status,
       });
+
+      // Clear stale payment localStorage if not coming from a successful payment
+      if (status !== 'success' || !oid) {
+        try {
+          localStorage.removeItem('last_payment_report_id');
+          localStorage.removeItem('last_payment_email');
+        } catch(e) {}
+        return;
+      }
+
       // Read stored report_id and email from checkout
       try {
         var rid = localStorage.getItem('last_payment_report_id');
