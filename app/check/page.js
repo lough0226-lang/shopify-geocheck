@@ -249,16 +249,24 @@ export default function CheckPage() {
       setLoadingText(msgs[msgIndex]);
     }, 2500);
 
-    fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: inputUrl }),
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      if (!data.success) {
-        throw new Error(data.error || t.errorGeneric);
-      }
+    // 封装分析请求函数（支持自动重试）
+    function runAnalysis() {
+      return fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: inputUrl }),
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (!data.success) {
+          throw new Error(data.error || t.errorGeneric);
+        }
+        return data;
+      });
+    }
+
+    // 保存分析结果到 localStorage
+    function saveReport(data) {
       try {
         if (data && data.report_id) {
           var fullReport = {
@@ -277,7 +285,33 @@ export default function CheckPage() {
       } catch (storageErr) {
         console.warn('localStorage save failed:', storageErr);
       }
-      setResults(data);
+    }
+
+    // 执行分析，AI 失败时自动重试 1 次（前端静默重试）
+    runAnalysis()
+    .then(function(data) {
+      // 如果 AI 分析降级（3次后端重试都失败），前端再自动重试 1 次
+      if (data._fallback) {
+        console.log('[Frontend] AI fallback detected, auto-retrying in 2s...');
+        setLoadingText((lang === 'zh' ? '分析未完成，正在重新分析...' : 'Analysis incomplete, re-analyzing...'));
+        return new Promise(function(resolve) {
+          setTimeout(function() {
+            runAnalysis()
+            .then(function(retryData) {
+              console.log('[Frontend] Retry result, fallback:', retryData._fallback);
+              resolve(retryData); // 无论重试是否成功，都用新结果
+            })
+            .catch(function() {
+              resolve(data); // 重试也失败，用原始降级结果
+            });
+          }, 2000);
+        });
+      }
+      return data;
+    })
+    .then(function(finalData) {
+      saveReport(finalData);
+      setResults(finalData);
     })
     .catch(function(err) {
       console.error('Analysis error:', err);

@@ -8,17 +8,17 @@ import { analyzeProduct } from '../../../lib/openai';
 export const runtime = 'nodejs';
 // 禁止静态预渲染 - 必须动态运行
 export const dynamic = 'force-dynamic';
+// Vercel 函数最大执行时间（Pro 计划 60s，Hobby 计划 10s）
+export const maxDuration = 60;
 
 // 内存存储：暂存分析结果（用于付费后查看完整报告）
 const reportStore = new Map();
 
-// 月度 API 预算追踪（内存计数，Vercel 无状态但可跨请求累计）
-// 注意：Vercel 无服务器环境下内存不会跨实例持久化，此为尽力而为的保护
+// 月度 API 预算追踪
 const apiUsageTracker = {
-  currentMonth: new Date().toISOString().slice(0, 7), // "2026-08"
+  currentMonth: new Date().toISOString().slice(0, 7),
   callCount: 0,
-  estimatedCost: 0, // 单位：美元
-  // 每次 GPT-4o-mini 级别调用成本约 $0.01-0.03，按 $0.02 估算
+  estimatedCost: 0,
   COST_PER_CALL: 0.02,
 };
 
@@ -26,7 +26,6 @@ function checkBudgetLimit() {
   const now = new Date();
   const currentMonth = now.toISOString().slice(0, 7);
   
-  // 月初重置计数器
   if (apiUsageTracker.currentMonth !== currentMonth) {
     apiUsageTracker.currentMonth = currentMonth;
     apiUsageTracker.callCount = 0;
@@ -34,8 +33,8 @@ function checkBudgetLimit() {
     console.log(`[Budget] Month reset: ${currentMonth}`);
   }
   
-  const monthlyBudget = parseFloat(process.env.MONTHLY_API_BUDGET || '50'); // 默认 $50/月
-  const warningThreshold = monthlyBudget * 0.8; // 80% 时预警
+  const monthlyBudget = parseFloat(process.env.MONTHLY_API_BUDGET || '50');
+  const warningThreshold = monthlyBudget * 0.8;
   
   if (apiUsageTracker.estimatedCost >= monthlyBudget) {
     return {
@@ -59,7 +58,7 @@ function recordApiCall() {
 }
 
 /**
- * 生成降级结果（AI 分析失败时使用）
+ * 生成降级结果（AI 分析完全失败时使用）
  */
 function generateFallbackAnalysis(productData, url) {
   return {
@@ -70,8 +69,8 @@ function generateFallbackAnalysis(productData, url) {
       {
         category: 'Structure',
         severity: 'medium',
-        issue: 'AI analysis was interrupted. Re-run for detailed insights.',
-        impact: 'Full evaluation not available.',
+        issue: 'AI analysis was interrupted. Please re-run for detailed insights.',
+        impact: 'Full evaluation not available. Try again in a few seconds.',
         dimension: 'General',
       }
     ],
@@ -88,13 +87,11 @@ function generateFallbackAnalysis(productData, url) {
 /**
  * POST /api/analyze
  * Body: { url: string }
- * Response: { score, product_name, free_issues, report_id }
  */
 export async function POST(request) {
   try {
     const { url } = await request.json();
 
-    // 1. 验证 URL 格式
     if (!url || typeof url !== 'string') {
       return NextResponse.json(
         { error: 'Please provide a valid URL' },
@@ -102,7 +99,6 @@ export async function POST(request) {
       );
     }
 
-    // 2. 验证是否为 Shopify 产品页面
     if (!isValidShopifyUrl(url)) {
       return NextResponse.json(
         { error: 'Please enter a valid Shopify product URL (must be a myshopify.com store or contain /products/ path)' },
@@ -110,7 +106,7 @@ export async function POST(request) {
       );
     }
 
-    // 3. 抓取产品页面内容
+    // 抓取产品页面内容
     let productData;
     try {
       productData = await scrapeProductPage(url);
@@ -122,7 +118,7 @@ export async function POST(request) {
       );
     }
 
-    // 3.5 检查月度 API 预算
+    // 检查月度 API 预算
     const budgetCheck = checkBudgetLimit();
     if (!budgetCheck.allowed) {
       return NextResponse.json(
@@ -131,22 +127,20 @@ export async function POST(request) {
       );
     }
 
-    // 4. 调用 AI 分析（带降级）
+    // 调用 AI 分析（lib/openai.js 内部已有 3 次重试 + 指数退避）
     let analysisResult;
     let aiErrorInfo = null;
     try {
       analysisResult = await analyzeProduct(productData, url);
-      // AI 分析成功，记录调用
       recordApiCall();
     } catch (aiError) {
-      console.error('AI analysis failed, using fallback:', aiError.message);
+      console.error('AI analysis failed after all retries:', aiError.message);
       aiErrorInfo = aiError.message;
       analysisResult = generateFallbackAnalysis(productData, url);
     }
 
-    // 5. 生成报告 ID 并存储完整结果
+    // 生成报告 ID 并存储
     const reportId = crypto.randomUUID();
-
     reportStore.set(reportId, {
       url,
       result: analysisResult,
@@ -154,7 +148,7 @@ export async function POST(request) {
       product_name: analysisResult.product_name || productData.title,
     });
 
-    // 6. 返回结果（包含完整报告数据，供前端 localStorage 存储）
+    // 返回结果
     const responseData = {
       success: true,
       score: analysisResult.score,
@@ -176,8 +170,6 @@ export async function POST(request) {
     return NextResponse.json(responseData);
   } catch (error) {
     console.error('Analysis API error:', error);
-    console.error('Error stack:', error.stack);
-
     return NextResponse.json(
       { 
         error: 'Something went wrong. Please try again.',
@@ -190,7 +182,6 @@ export async function POST(request) {
 
 /**
  * GET /api/analyze?report_id=xxx
- * 用于付费后获取完整报告
  */
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -219,5 +210,4 @@ export async function GET(request) {
   });
 }
 
-// 导出 reportStore 供其他模块使用
 export { reportStore };
