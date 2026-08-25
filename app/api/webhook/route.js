@@ -2,7 +2,7 @@
 // Features: immediate retry, persistent queue, automated fallback, real-time alerts
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { recordWebhookFailure } from '../../lib/health-monitor.js';
+import { recordWebhookFailure } from '../../../lib/health-monitor.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
