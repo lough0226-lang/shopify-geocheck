@@ -192,6 +192,7 @@ export default function CheckPage() {
   var [url, setUrl] = useState('');
   var [loading, setLoading] = useState(false);
   var [error, setError] = useState('');
+  var [errorInfo, setErrorInfo] = useState(null);
   var [results, setResults] = useState(null);
   var [loadingText, setLoadingText] = useState('');
   var [lang, setLang] = useState('en');
@@ -231,6 +232,7 @@ export default function CheckPage() {
     window.__geoAnalyzing = true;
 
     setError('');
+    setErrorInfo(null);
     setResults(null);
 
     var currentId = Date.now();
@@ -272,6 +274,16 @@ export default function CheckPage() {
         // Detect 504/503 timeout errors from Vercel concurrency limits
         if (res.status === 504 || res.status === 503) {
           throw new Error('__TIMEOUT__');
+        }
+        // Capture 422 structured error response before throwing
+        if (res.status === 422) {
+          return res.json().then(function(errData) {
+            var err = new Error(errData.error || t.errorGeneric);
+            err.errorType = errData.error_type || 'GENERIC';
+            err.errorTitle = errData.error_title || 'Error';
+            err.suggestions = errData.suggestions || [];
+            throw err;
+          });
         }
         return res.json();
       })
@@ -339,8 +351,18 @@ export default function CheckPage() {
       // Show specific message for 504/503 timeout errors
       if (err.message === '__TIMEOUT__') {
         setError(t.errorTimeout);
+        setErrorInfo(null);
+      } else if (err.errorType) {
+        // Structured scraping error with user-friendly info
+        setError(err.message);
+        setErrorInfo({
+          type: err.errorType,
+          title: err.errorTitle,
+          suggestions: err.suggestions || [],
+        });
       } else {
         setError(err.message || t.errorGeneric);
+        setErrorInfo(null);
       }
     })
     .finally(function() {
@@ -451,9 +473,39 @@ export default function CheckPage() {
               </button>
             </div>
 
-            {error && (
+            {error && !errorInfo && (
               <div style={{ marginTop: 12, padding: 12, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#b91c1c', fontSize: 14 }}>
                 {error}
+              </div>
+            )}
+
+            {/* Structured Error Card with suggestions */}
+            {error && errorInfo && (
+              <div style={{ marginTop: 16, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: 20, overflow: 'hidden' }}>
+                {/* Error icon + title */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontSize: 22 }}>
+                    {errorInfo.type === 'NOT_FOUND' ? '🔍' : errorInfo.type === 'ANTI_BOT' ? '🛡️' : errorInfo.type === 'ACCESS_DENIED' ? '🔒' : '⚠️'}
+                  </span>
+                  <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#92400e' }}>
+                    {errorInfo.title}
+                  </h4>
+                </div>
+                {/* Error explanation */}
+                <p style={{ margin: '0 0 14px 0', fontSize: 14, color: '#78350f', lineHeight: 1.6 }}>
+                  {error}
+                </p>
+                {/* Suggestions */}
+                {errorInfo.suggestions && errorInfo.suggestions.length > 0 && (
+                  <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '12px 16px' }}>
+                    <p style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 600, color: '#92400e' }}>💡 What you can try:</p>
+                    <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: '#78350f', lineHeight: 1.8 }}>
+                      {errorInfo.suggestions.map(function(s, i) {
+                        return <li key={i}>{s}</li>;
+                      })}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 

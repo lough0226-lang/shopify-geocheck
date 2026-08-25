@@ -119,8 +119,15 @@ export async function POST(request) {
       productData = await scrapeProductPage(url);
     } catch (scrapeError) {
       console.error('Scraping failed:', scrapeError.message);
+      // 返回结构化错误信息，前端可展示用户友好的提示
       return NextResponse.json(
-        { error: 'Could not access the product page.', debug: scrapeError.message },
+        {
+          error: scrapeError.message || 'Could not access the product page.',
+          error_type: scrapeError.errorType || 'GENERIC',
+          error_title: scrapeError.errorTitle || 'Unable to Access Page',
+          suggestions: scrapeError.suggestions || [],
+          debug: process.env.NODE_ENV === 'development' ? scrapeError.allErrors?.join(' | ') : undefined,
+        },
         { status: 422 }
       );
     }
