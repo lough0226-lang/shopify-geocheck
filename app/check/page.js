@@ -385,7 +385,7 @@ export default function CheckPage() {
 
     // Set loading state for checkout
     setLoading(true);
-    setLoadingText('Redirecting to secure checkout...');
+    setLoadingText(t.checkoutRedirect);
 
     fetch('/api/payment', {
       method: 'POST',
@@ -577,10 +577,10 @@ export default function CheckPage() {
               {freeIssues.length > 0 && (
                 <div style={{ background: '#f0fdf4', border: '1px solid #a7f3d0', borderRadius: 16, padding: 32, marginBottom: 32, textAlign: 'center' }}>
                   <h3 style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
-                    📧 Get Free GEO Tips via Email
+                    {t.emailSubscribeTitle}
                   </h3>
                   <p style={{ color: '#4b5563', fontSize: 14, marginBottom: 16 }}>
-                    Receive weekly GEO optimization tips and AI search insights directly in your inbox.
+                    {t.emailSubscribeDesc}
                   </p>
                   <form onSubmit={function(e) {
                     e.preventDefault();
@@ -594,12 +594,12 @@ export default function CheckPage() {
                     }).then(function() {
                       var container = document.getElementById('email-form-container');
                       if (container) {
-                        container.innerHTML = '<div style="padding:16px;color:#047857;font-weight:600;font-size:15px;">✅ Thanks! Check your inbox for a confirmation.</div>';
+                        container.innerHTML = '<div style="padding:16px;color:#047857;font-weight:600;font-size:15px;">' + t.emailSubscribeSuccess + '</div>';
                       }
                     }).catch(function() {
                       var container = document.getElementById('email-form-container');
                       if (container) {
-                        container.innerHTML = '<div style="padding:16px;color:#b91c1c;font-size:14px;">Something went wrong. Please try again.</div>';
+                        container.innerHTML = '<div style="padding:16px;color:#b91c1c;font-size:14px;">' + t.emailSubscribeError + '</div>';
                       }
                     });
                   }} id="email-form-container" style={{ display: 'flex', gap: 12, maxWidth: 420, margin: '0 auto', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -622,10 +622,10 @@ export default function CheckPage() {
                         fontSize: 15, cursor: 'pointer',
                       }}
                     >
-                      Subscribe Free
+                      {t.emailSubscribeBtn}
                     </button>
                   </form>
-                  <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 10 }}>No spam. Unsubscribe anytime.</p>
+                  <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 10 }}>{t.emailSubscribeSpam}</p>
                 </div>
               )}
 
