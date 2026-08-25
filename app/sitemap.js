@@ -1,7 +1,10 @@
-export default function sitemap() {
-  const baseUrl = 'https://mygeocheck.com'
+import { getAllPosts } from '../lib/posts';
 
-  return [
+export default function sitemap() {
+  const baseUrl = 'https://mygeocheck.com';
+  const posts = getAllPosts();
+
+  const staticPages = [
     {
       url: `${baseUrl}/`,
       lastModified: new Date('2026-08-25'),
@@ -15,6 +18,12 @@ export default function sitemap() {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date('2026-08-25'),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/privacy`,
       lastModified: new Date('2026-08-25'),
       changeFrequency: 'monthly',
@@ -26,11 +35,14 @@ export default function sitemap() {
       changeFrequency: 'monthly',
       priority: 0.3,
     },
-    {
-      url: `${baseUrl}/success`,
-      lastModified: new Date('2026-08-25'),
-      changeFrequency: 'monthly',
-      priority: 0.2,
-    },
-  ]
+  ];
+
+  const blogPosts = posts.map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: new Date(post.date),
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...blogPosts];
 }

@@ -28,12 +28,12 @@ function detectLanguage() {
 
 // Nav labels per language
 const NAV_LABELS = {
-  en: { howItWorks: 'How It Works', pricing: 'Pricing', faq: 'FAQ', freeCheck: 'Free Check' },
-  zh: { howItWorks: '工作原理', pricing: '价格', faq: '常见问题', freeCheck: '免费检测' },
-  de: { howItWorks: 'So funktioniert\'s', pricing: 'Preise', faq: 'FAQ', freeCheck: 'Gratis testen' },
-  fr: { howItWorks: 'Comment ça marche', pricing: 'Tarifs', faq: 'FAQ', freeCheck: 'Test gratuit' },
-  es: { howItWorks: 'Cómo funciona', pricing: 'Precios', faq: 'FAQ', freeCheck: 'Prueba gratis' },
-  pt: { howItWorks: 'Como funciona', pricing: 'Preços', faq: 'FAQ', freeCheck: 'Teste grátis' },
+  en: { howItWorks: 'How It Works', pricing: 'Pricing', faq: 'FAQ', blog: 'Blog', freeCheck: 'Free Check' },
+  zh: { howItWorks: '工作原理', pricing: '价格', faq: '常见问题', blog: '博客', freeCheck: '免费检测' },
+  de: { howItWorks: 'So funktioniert\'s', pricing: 'Preise', faq: 'FAQ', blog: 'Blog', freeCheck: 'Gratis testen' },
+  fr: { howItWorks: 'Comment ça marche', pricing: 'Tarifs', faq: 'FAQ', blog: 'Blog', freeCheck: 'Test gratuit' },
+  es: { howItWorks: 'Cómo funciona', pricing: 'Precios', faq: 'FAQ', blog: 'Blog', freeCheck: 'Prueba gratis' },
+  pt: { howItWorks: 'Como funciona', pricing: 'Preços', faq: 'FAQ', blog: 'Blog', freeCheck: 'Teste grátis' },
 };
 
 export default function Header() {
@@ -82,6 +82,9 @@ export default function Header() {
               <a href="/#faq" className="text-sm text-gray-600 hover:text-primary-700 transition-colors">
                 {t.faq}
               </a>
+              <Link href="/blog" className="text-sm text-gray-600 hover:text-primary-700 transition-colors">
+                {t.blog}
+              </Link>
             </nav>
 
             <Link href="/check" className="btn-primary !py-2 !px-5 text-sm">
@@ -154,6 +157,9 @@ export default function Header() {
               <a href="/#faq" className="text-gray-600 hover:text-primary-700 py-2" onClick={() => setMobileOpen(false)}>
                 {t.faq}
               </a>
+              <Link href="/blog" className="text-gray-600 hover:text-primary-700 py-2" onClick={() => setMobileOpen(false)}>
+                {t.blog}
+              </Link>
 
               {/* Mobile Language Switcher */}
               <div className="py-2 border-t border-gray-100 mt-1">
