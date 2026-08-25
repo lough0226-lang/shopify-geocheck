@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAllPosts, getPostBySlug, getRelatedPosts, extractHeadings, addHeadingIds, getWordCount, author } from '../../../lib/posts';
+import ReadingProgress from '../../../components/ReadingProgress';
 
 export async function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
@@ -79,6 +80,7 @@ export default function BlogPostPage({ params }) {
 
   return (
     <div className="bg-white min-h-screen">
+      <ReadingProgress />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
