@@ -12,6 +12,52 @@ export const dynamic = 'force-dynamic';
 // 内存存储：暂存分析结果（用于付费后查看完整报告）
 const reportStore = new Map();
 
+// 月度 API 预算追踪（内存计数，Vercel 无状态但可跨请求累计）
+// 注意：Vercel 无服务器环境下内存不会跨实例持久化，此为尽力而为的保护
+const apiUsageTracker = {
+  currentMonth: new Date().toISOString().slice(0, 7), // "2026-08"
+  callCount: 0,
+  estimatedCost: 0, // 单位：美元
+  // 每次 GPT-4o-mini 级别调用成本约 $0.01-0.03，按 $0.02 估算
+  COST_PER_CALL: 0.02,
+};
+
+function checkBudgetLimit() {
+  const now = new Date();
+  const currentMonth = now.toISOString().slice(0, 7);
+  
+  // 月初重置计数器
+  if (apiUsageTracker.currentMonth !== currentMonth) {
+    apiUsageTracker.currentMonth = currentMonth;
+    apiUsageTracker.callCount = 0;
+    apiUsageTracker.estimatedCost = 0;
+    console.log(`[Budget] Month reset: ${currentMonth}`);
+  }
+  
+  const monthlyBudget = parseFloat(process.env.MONTHLY_API_BUDGET || '50'); // 默认 $50/月
+  const warningThreshold = monthlyBudget * 0.8; // 80% 时预警
+  
+  if (apiUsageTracker.estimatedCost >= monthlyBudget) {
+    return {
+      allowed: false,
+      reason: `Monthly API budget of $${monthlyBudget} exceeded. Current: $${apiUsageTracker.estimatedCost.toFixed(2)}`,
+      usage: apiUsageTracker,
+    };
+  }
+  
+  if (apiUsageTracker.estimatedCost >= warningThreshold) {
+    console.warn(`[Budget] WARNING: Approaching limit. $${apiUsageTracker.estimatedCost.toFixed(2)} / $${monthlyBudget}`);
+  }
+  
+  return { allowed: true, usage: apiUsageTracker };
+}
+
+function recordApiCall() {
+  apiUsageTracker.callCount++;
+  apiUsageTracker.estimatedCost += apiUsageTracker.COST_PER_CALL;
+  console.log(`[Budget] Call #${apiUsageTracker.callCount}, estimated cost: $${apiUsageTracker.estimatedCost.toFixed(2)}`);
+}
+
 /**
  * 生成降级结果（AI 分析失败时使用）
  */
@@ -76,11 +122,22 @@ export async function POST(request) {
       );
     }
 
+    // 3.5 检查月度 API 预算
+    const budgetCheck = checkBudgetLimit();
+    if (!budgetCheck.allowed) {
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable due to high demand. Please try again next month.' },
+        { status: 503 }
+      );
+    }
+
     // 4. 调用 AI 分析（带降级）
     let analysisResult;
     let aiErrorInfo = null;
     try {
       analysisResult = await analyzeProduct(productData, url);
+      // AI 分析成功，记录调用
+      recordApiCall();
     } catch (aiError) {
       console.error('AI analysis failed, using fallback:', aiError.message);
       aiErrorInfo = aiError.message;
@@ -112,6 +169,9 @@ export async function POST(request) {
     };
     if (aiErrorInfo) {
       responseData._ai_error = aiErrorInfo;
+    }
+    if (process.env.NODE_ENV === 'development') {
+      responseData._api_usage = budgetCheck.usage;
     }
     return NextResponse.json(responseData);
   } catch (error) {
