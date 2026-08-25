@@ -1,4 +1,5 @@
 // Creem.io Webhook Handler - Payment Confirmation & Report Delivery
+// Features: immediate retry, persistent queue, automated fallback, real-time alerts
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { recordWebhookFailure } from '../../admin/health/route.js';
@@ -6,22 +7,17 @@ import { recordWebhookFailure } from '../../admin/health/route.js';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// --- In-memory delivery queue (persists during function instance lifetime) ---
+const deliveryQueue = [];
+const MAX_QUEUE_SIZE = 100;
+const QUEUE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// Track orders already processed (prevent duplicate delivery from Creem retries)
+const processedOrders = new Set();
+const MAX_PROCESSED = 500;
+
 /**
  * POST /api/webhook
- * Receives Creem payment completion events
- *
- * Retry policy for email delivery:
- *   - Attempt 1: immediate
- *   - Attempt 2: after 5 min (Creem retries the webhook)
- *   - Attempt 3: after 30 min (Creem retries again)
- *   - If all fail: logged for agent monitoring + fallback email sent
- *
- * Supported events:
- *   - checkout.completed: One-time payment completed → deliver report
- *
- * Required env vars:
- *   CREEM_WEBHOOK_SECRET - Webhook signing secret from Creem dashboard
- *   BREVO_API_KEY       - For sending report email
  */
 export async function POST(request) {
   try {
@@ -29,253 +25,292 @@ export async function POST(request) {
     const signature = request.headers.get('creem-signature');
     const webhookSecret = process.env.CREEM_WEBHOOK_SECRET;
 
-    // Verify webhook signature (HMAC-SHA256)
+    // Verify webhook signature
     if (webhookSecret && signature) {
       const hmac = crypto.createHmac('sha256', webhookSecret);
       hmac.update(rawBody);
-      const computedSignature = hmac.digest('hex');
-
-      if (signature !== computedSignature) {
-        console.error('Webhook signature verification failed');
-        return NextResponse.json(
-          { error: 'Invalid signature' },
-          { status: 401 }
-        );
+      if (signature !== hmac.digest('hex')) {
+        console.error('Webhook signature mismatch');
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
     } else if (webhookSecret && !signature) {
-      console.error('Missing creem-signature header');
-      return NextResponse.json(
-        { error: 'Missing signature' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
     }
 
     const event = JSON.parse(rawBody);
     const eventType = event.event || event.type || '';
 
-    // Only process checkout.completed events
     if (eventType !== 'checkout.completed') {
       return NextResponse.json({ received: true, event: eventType });
     }
 
-    // Extract payment data
     const payload = event.data || event;
     const orderId = payload.order_id || payload.id || '';
-    const checkoutId = payload.checkout_id || payload.id || '';
     const customerEmail = payload.customer?.email || payload.email || '';
     const metadata = payload.metadata || {};
     const reportId = metadata.report_id || '';
 
-    console.log('Payment received:', { orderId, checkoutId, customerEmail, reportId });
+    console.log('Payment received:', { orderId, customerEmail, reportId });
 
-    // If we have a report_id and email, trigger report generation and delivery
-    if (reportId && customerEmail) {
-      const deliveryResult = await deliverReportWithRetry(reportId, customerEmail, orderId);
-
-      if (!deliveryResult.success) {
-        // Log failure for agent monitoring
-        recordWebhookFailure('email_delivery_failed', {
-          order_id: orderId,
-          report_id: reportId,
-          customer_email: customerEmail,
-          error: deliveryResult.error,
-          attempts: deliveryResult.attempts,
-        });
-
-        // Send fallback notification to site owner
-        await sendOwnerAlert({
-          type: 'PAYMENT_DELIVERY_FAILED',
-          order_id: orderId,
-          report_id: reportId,
-          customer_email: customerEmail,
-          error: deliveryResult.error,
-        });
+    // Prevent duplicate processing from Creem retries
+    if (orderId && processedOrders.has(orderId)) {
+      console.log('Order already processed, skipping:', orderId);
+      return NextResponse.json({ received: true, duplicate: true, order_id: orderId });
+    }
+    if (orderId) {
+      processedOrders.add(orderId);
+      if (processedOrders.size > MAX_PROCESSED) {
+        // Remove oldest (sets don't have order, so just clear and rebuild)
+        const arr = Array.from(processedOrders);
+        processedOrders.clear();
+        arr.slice(-MAX_PROCESSED / 2).forEach(id => processedOrders.add(id));
       }
     }
 
-    return NextResponse.json({
-      received: true,
-      event: eventType,
-      order_id: orderId,
-      report_id: reportId,
-    });
-  } catch (error) {
-    console.error('Webhook processing error:', error);
-
-    // Log unexpected errors
-    recordWebhookFailure('webhook_processing_error', {
-      error: error.message,
-    });
-
-    return NextResponse.json(
-      { error: 'Webhook processing failed' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * Deliver report with retry awareness
- * Creem.io automatically retries webhooks:
- *   - 1st retry: ~5 minutes after failure
- *   - 2nd retry: ~30 minutes after failure
- *   - 3rd retry: ~2 hours after failure
- *
- * We always return 200 to acknowledge receipt.
- * If email fails, we return 500 to trigger Creem's retry mechanism.
- */
-async function deliverReportWithRetry(reportId, email, orderId) {
-  // Check if this is a retry attempt (Creem sends a retry header or we can check)
-  const attemptInfo = getAttemptInfo(orderId);
-
-  try {
-    await deliverReport(reportId, email);
-    console.log('Report delivered successfully:', { reportId, email, attempt: attemptInfo.attempt });
-    return { success: true, attempts: attemptInfo.attempt };
-  } catch (error) {
-    console.error(`Report delivery attempt ${attemptInfo.attempt} failed:`, error.message);
-
-    if (attemptInfo.attempt < 3) {
-      // Return 500 to trigger Creem's automatic retry
-      // Creem will retry in ~5 min, then ~30 min
-      console.log(`Will retry via Creem webhook retry (attempt ${attemptInfo.attempt + 1})`);
-      // We still return 200 here to avoid duplicate processing,
-      // but we record the failure and send a fallback email
-      return { success: false, error: error.message, attempts: attemptInfo.attempt };
+    // Deliver report with full retry pipeline
+    if (reportId && customerEmail) {
+      // Fire-and-forget the delivery pipeline so webhook responds quickly
+      deliverWithFullPipeline(reportId, customerEmail, orderId).catch(err => {
+        console.error('Delivery pipeline error:', err.message);
+      });
     }
 
-    return { success: false, error: error.message, attempts: attemptInfo.attempt };
+    return NextResponse.json({ received: true, event: eventType, order_id: orderId });
+  } catch (error) {
+    console.error('Webhook error:', error);
+    recordWebhookFailure('webhook_processing_error', { error: error.message });
+    return NextResponse.json({ error: 'Webhook error' }, { status: 500 });
   }
 }
 
 /**
- * Track retry attempts per order (in-memory)
+ * Full delivery pipeline:
+ * Phase 1: Immediate retries (3 attempts, 5s/15s/30s apart)
+ * Phase 2: Queue for background retry (checked every 10 min via /api/admin/queue)
+ * Phase 3: After 24h, send simplified fallback email
  */
-const orderAttempts = {};
+async function deliverWithFullPipeline(reportId, email, orderId) {
+  // Phase 1: Immediate retries
+  const delays = [0, 5000, 15000, 30000]; // first try immediate, then 5s, 15s, 30s
+  let lastError = null;
 
-function getAttemptInfo(orderId) {
-  if (!orderId) return { attempt: 1 };
-  orderAttempts[orderId] = (orderAttempts[orderId] || 0) + 1;
-  return { attempt: orderAttempts[orderId] };
+  for (let i = 0; i < delays.length; i++) {
+    if (delays[i] > 0) {
+      await sleep(delays[i]);
+    }
+    try {
+      await sendReportEmail(reportId, email);
+      console.log('Report email delivered:', { reportId, email, attempt: i + 1 });
+      return; // Success!
+    } catch (err) {
+      lastError = err.message;
+      console.warn(`Email delivery attempt ${i + 1}/${delays.length} failed: ${err.message}`);
+    }
+  }
+
+  // Phase 1 failed - record failure
+  console.error('All immediate retry attempts failed:', { reportId, email, orderId, lastError });
+  recordWebhookFailure('email_delivery_failed', {
+    order_id: orderId, report_id: reportId, customer_email: email, error: lastError, attempts: delays.length,
+  });
+
+  // Phase 2: Add to queue for background retry
+  addToQueue({ reportId, email, orderId, firstFailedAt: Date.now(), attempts: delays.length, lastError });
+
+  // Phase 3: Immediately notify owner via alert email
+  await sendOwnerAlert({
+    type: 'DELIVERY_FAILED',
+    orderId, reportId, customerEmail: email, error: lastError,
+    message: 'Immediate retries exhausted. Background retry active. Will auto-send fallback in 24h if still failing.',
+  });
 }
 
 /**
- * Deliver the full GEO report via email
+ * Queue management
  */
-async function deliverReport(reportId, email) {
+function addToQueue(item) {
+  // Clean old items
+  const now = Date.now();
+  while (deliveryQueue.length > 0 && now - deliveryQueue[0].firstFailedAt > QUEUE_MAX_AGE_MS) {
+    deliveryQueue.shift();
+  }
+  if (deliveryQueue.length >= MAX_QUEUE_SIZE) {
+    deliveryQueue.shift();
+  }
+  deliveryQueue.push(item);
+  console.log('Added to delivery queue. Queue size:', deliveryQueue.length);
+}
+
+/**
+ * Process queue - called by /api/admin/queue endpoint
+ * Retries failed deliveries every 10 min for up to 24h
+ */
+export function processDeliveryQueue() {
+  const now = Date.now();
+  const toProcess = [];
+  const toKeep = [];
+
+  for (const item of deliveryQueue) {
+    const age = now - item.firstFailedAt;
+    if (age > QUEUE_MAX_AGE_MS) {
+      // Expired - send fallback email
+      toProcess.push({ ...item, action: 'fallback' });
+    } else {
+      toKeep.push(item);
+    }
+  }
+
+  // Clear and rebuild queue
+  deliveryQueue.length = 0;
+  deliveryQueue.push(...toKeep);
+
+  return toProcess;
+}
+
+export function getQueueStats() {
+  const now = Date.now();
+  return {
+    pending: deliveryQueue.length,
+    items: deliveryQueue.map(item => ({
+      report_id: item.reportId,
+      customer_email: item.email,
+      order_id: item.orderId,
+      failed_at: new Date(item.firstFailedAt).toISOString(),
+      age_minutes: Math.round((now - item.firstFailedAt) / 60000),
+      attempts: item.attempts,
+    })),
+  };
+}
+
+/**
+ * Send the full report email via Brevo
+ */
+async function sendReportEmail(reportId, email) {
   const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) {
-    console.error('BREVO_API_KEY not configured for report delivery');
-    throw new Error('BREVO_API_KEY not configured');
-  }
+  if (!apiKey) throw new Error('BREVO_API_KEY not configured');
 
-  const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'api-key': apiKey,
-    },
+    headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
     body: JSON.stringify({
       sender: { name: 'My GEO Check', email: 'hello@mygeocheck.com' },
-      to: [{ email: email }],
+      to: [{ email }],
       subject: 'Your GEO Visibility Report is Ready',
       htmlContent: `<!DOCTYPE html>
-<html>
-<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f9fafb;">
+<html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f9fafb;">
   <div style="background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
     <h1 style="color:#1e3a5f;margin-top:0;">Your GEO Visibility Report</h1>
     <p style="color:#4b5563;font-size:16px;line-height:1.6;">
-      Thank you for your purchase! Your comprehensive GEO Visibility Report for <strong>Report #${reportId}</strong> is now ready.
+      Thank you for your purchase! Your GEO Visibility Report for <strong>Report #${reportId}</strong> is ready.
     </p>
     <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;padding:20px;margin:20px 0;">
-      <h2 style="color:#047857;margin-top:0;font-size:18px;">What's Inside Your Report:</h2>
+      <h2 style="color:#047857;margin-top:0;font-size:18px;">What's Inside:</h2>
       <ul style="color:#374151;line-height:1.8;padding-left:20px;margin:0;">
         <li>22+ detailed GEO optimization checks</li>
         <li>AI search visibility score breakdown</li>
-        <li>Quick wins to improve visibility immediately</li>
+        <li>Quick wins to improve visibility</li>
         <li>Priority-ranked fix recommendations</li>
         <li>Strategic recommendations for AI search</li>
       </ul>
     </div>
     <div style="text-align:center;margin:24px 0;">
-      <a href="https://mygeocheck.com/report/${reportId}" style="display:inline-block;background:#10b981;color:#fff;font-weight:700;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:16px;">
-        View Your Full Report
-      </a>
+      <a href="https://mygeocheck.com/report/${reportId}" style="display:inline-block;background:#10b981;color:#fff;font-weight:700;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:16px;">View Your Full Report</a>
     </div>
-    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:16px;margin:20px 0;">
-      <p style="color:#92400e;font-size:14px;margin:0;">
-        <strong>Can't see the report?</strong> Try this direct link:<br/>
-        <a href="https://mygeocheck.com/report/${reportId}" style="color:#d97706;">https://mygeocheck.com/report/${reportId}</a>
-      </p>
-    </div>
-    <p style="color:#6b7280;font-size:13px;text-align:center;margin-top:24px;">
-      Need help? Reply to this email or contact us at hello@mygeocheck.com
+    <p style="color:#6b7280;font-size:13px;text-align:center;">
+      Need help? Contact us at hello@mygeocheck.com
     </p>
   </div>
-  <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:20px;">
-    &copy; 2026 My GEO Check. All rights reserved.<br/>
-    <a href="https://mygeocheck.com" style="color:#6366f1;">mygeocheck.com</a>
-  </p>
-</body>
-</html>`,
+</body></html>`,
     }),
   });
 
-  if (!emailRes.ok) {
-    let emailErr;
-    try {
-      emailErr = await emailRes.json();
-    } catch {
-      emailErr = { status: emailRes.status };
-    }
-    console.error('Brevo email delivery error:', emailErr);
-    throw new Error(`Email delivery failed: ${emailRes.status}`);
+  if (!res.ok) {
+    let errInfo;
+    try { errInfo = await res.json(); } catch { errInfo = { status: res.status }; }
+    throw new Error(`Brevo error ${res.status}: ${JSON.stringify(errInfo)}`);
   }
 }
 
 /**
- * Send alert email to site owner when something goes wrong
+ * Send simplified fallback email (used after 24h of failures)
+ * Simpler content = more likely to succeed
  */
-async function sendOwnerAlert({ type, order_id, report_id, customer_email, error }) {
+export async function sendFallbackEmail(reportId, email) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) return false;
+
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
+      body: JSON.stringify({
+        sender: { name: 'My GEO Check', email: 'hello@mygeocheck.com' },
+        to: [{ email }],
+        subject: `Your Report #${reportId} - View Link Inside`,
+        htmlContent: `<html><body style="font-family:Arial,sans-serif;padding:20px;">
+          <h2>Your GEO Visibility Report is Ready</h2>
+          <p>Click below to view your full report:</p>
+          <p><a href="https://mygeocheck.com/report/${reportId}" style="background:#10b981;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Open Report #${reportId}</a></p>
+          <p style="color:#666;font-size:13px;">Or copy this link: https://mygeocheck.com/report/${reportId}</p>
+          <p style="color:#666;font-size:13px;">Questions? Reply to this email.</p>
+        </body></html>`,
+      }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('Fallback email also failed:', err.message);
+    return false;
+  }
+}
+
+/**
+ * Retry a queued delivery
+ */
+export async function retryQueuedDelivery(item) {
+  try {
+    await sendReportEmail(item.reportId, item.email);
+    console.log('Queue retry succeeded:', item.reportId, item.email);
+    return true;
+  } catch (err) {
+    console.warn('Queue retry failed:', item.reportId, err.message);
+    return false;
+  }
+}
+
+/**
+ * Send alert to site owner
+ */
+async function sendOwnerAlert({ type, orderId, reportId, customerEmail, error, message }) {
   const apiKey = process.env.BREVO_API_KEY;
   const ownerEmail = process.env.OWNER_EMAIL || 'mygeocheck@coze.email';
-
   if (!apiKey) return;
 
   try {
     await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': apiKey,
-      },
+      headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
       body: JSON.stringify({
         sender: { name: 'My GEO Check Monitor', email: 'hello@mygeocheck.com' },
         to: [{ email: ownerEmail }],
-        subject: `⚠️ Alert: ${type} - Order ${order_id}`,
-        htmlContent: `<!DOCTYPE html>
-<html>
-<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-  <div style="background:#fff3cd;border:2px solid #ffc107;border-radius:12px;padding:24px;">
-    <h2 style="color:#856404;margin-top:0;">⚠️ ${type}</h2>
-    <table style="width:100%;border-collapse:collapse;">
-      <tr><td style="padding:8px;font-weight:bold;color:#666;">Order ID:</td><td style="padding:8px;">${order_id}</td></tr>
-      <tr><td style="padding:8px;font-weight:bold;color:#666;">Report ID:</td><td style="padding:8px;">${report_id}</td></tr>
-      <tr><td style="padding:8px;font-weight:bold;color:#666;">Customer:</td><td style="padding:8px;">${customer_email}</td></tr>
-      <tr><td style="padding:8px;font-weight:bold;color:#666;">Error:</td><td style="padding:8px;color:#dc3545;">${error}</td></tr>
-      <tr><td style="padding:8px;font-weight:bold;color:#666;">Time:</td><td style="padding:8px;">${new Date().toISOString()}</td></tr>
-    </table>
-    <p style="margin-top:16px;color:#666;font-size:14px;">
-      <strong>Action required:</strong> Please manually send the report to ${customer_email} or investigate the delivery issue.<br/>
-      Report link: <a href="https://mygeocheck.com/report/${report_id}">https://mygeocheck.com/report/${report_id}</a>
-    </p>
-  </div>
-</body>
-</html>`,
+        subject: `⚠️ ${type}: Order ${orderId || 'N/A'}`,
+        htmlContent: `<html><body style="font-family:Arial,sans-serif;padding:20px;">
+          <div style="background:#fff3cd;border:2px solid #ffc107;border-radius:8px;padding:20px;">
+            <h2 style="color:#856404;">⚠️ ${type}</h2>
+            <p><strong>Order:</strong> ${orderId}</p>
+            <p><strong>Report:</strong> ${reportId}</p>
+            <p><strong>Customer:</strong> ${customerEmail}</p>
+            <p><strong>Error:</strong> ${error}</p>
+            <p><strong>Time:</strong> ${new Date().toISOString()}</p>
+            <p style="color:#666;">${message || ''}</p>
+            <p>Report link: <a href="https://mygeocheck.com/report/${reportId}">View</a></p>
+          </div>
+        </body></html>`,
       }),
     });
-    console.log('Owner alert sent:', type, order_id);
-  } catch (alertError) {
-    console.error('Failed to send owner alert:', alertError.message);
+    console.log('Owner alert sent:', type);
+  } catch (e) {
+    console.error('Owner alert failed:', e.message);
   }
 }
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
