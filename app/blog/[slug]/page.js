@@ -12,7 +12,7 @@ export async function generateMetadata({ params }) {
   const post = getPostBySlug(params.slug);
   if (!post) return {};
   return {
-    title: `${post.title} | My GEO Check Blog`,
+    title: post.title,
     description: post.excerpt,
     openGraph: {
       title: post.title,
@@ -43,6 +43,7 @@ export default function BlogPostPage({ params }) {
   const wordCount = getWordCount(post.content);
   const relatedPosts = getRelatedPosts(post.slug, 3);
 
+  // BlogPosting schema
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -69,6 +70,7 @@ export default function BlogPostPage({ params }) {
     keywords: post.tags.join(', '),
   };
 
+  // BreadcrumbList schema
   const breadcrumbLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -79,17 +81,40 @@ export default function BlogPostPage({ params }) {
     ],
   };
 
+  // FAQPage schema (GEO: ~8x AI citation lift)
+  const faqLd = post.faq && post.faq.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: post.faq.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a,
+      },
+    })),
+  } : null;
+
+  // XSS-safe JSON stringify per Next.js docs
+  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
+
   return (
     <div className="bg-white min-h-screen">
       <ReadingProgress />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJson(jsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbLd) }}
       />
+      {faqLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJson(faqLd) }}
+        />
+      )}
 
       {/* Article header */}
       <header className="bg-primary-800 text-white pt-16 pb-12">
@@ -151,6 +176,14 @@ export default function BlogPostPage({ params }) {
 
       {/* Article body */}
       <article className="max-w-3xl mx-auto px-4 py-12">
+        {/* Quick Answer snippet box (GEO: answer-first, HubSpot pattern) */}
+        {post.quickAnswer && (
+          <div className="bg-accent-50 border-l-4 border-accent-500 rounded-r-lg p-5 mb-8 not-prose">
+            <p className="text-xs font-semibold text-accent-700 uppercase tracking-wider mb-2">Quick Answer</p>
+            <p className="text-gray-800 leading-relaxed m-0">{post.quickAnswer}</p>
+          </div>
+        )}
+
         {/* Table of contents (server-rendered, no JS needed) */}
         {headings.length > 0 && (
           <nav className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-8" aria-label="Table of contents">
@@ -174,6 +207,43 @@ export default function BlogPostPage({ params }) {
           className="prose prose-lg max-w-none prose-headings:scroll-mt-24 prose-headings:text-primary-800 prose-headings:font-bold prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3 prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-5 prose-a:text-accent-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-ul:my-5 prose-ol:my-5 prose-li:text-gray-700 prose-li:mb-2"
           dangerouslySetInnerHTML={{ __html: contentWithIds }}
         />
+
+        {/* FAQ section (visible + schema-backed, GEO high-impact) */}
+        {post.faq && post.faq.length > 0 && (
+          <section className="mt-12 pt-8 border-t border-gray-200 not-prose">
+            <h2 className="text-2xl font-bold text-primary-800 mb-6">Frequently Asked Questions</h2>
+            <div className="space-y-5">
+              {post.faq.map((item, i) => (
+                <div key={i} className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+                  <h3 className="font-bold text-gray-900 mb-2">{item.q}</h3>
+                  <p className="text-gray-700 leading-relaxed m-0">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Internal links hub (topic cluster: pillar + cross-links, GEO signal) */}
+        <section className="mt-10 bg-primary-50 border border-primary-200 rounded-xl p-6 not-prose">
+          <h3 className="font-bold text-primary-800 mb-3">Continue reading about GEO</h3>
+          <ul className="space-y-2 mb-0">
+            {getAllPostsInternal(post.slug).map((p) => (
+              <li key={p.slug}>
+                <Link
+                  href={`/blog/${p.slug}`}
+                  className="text-accent-700 hover:text-accent-800 font-medium text-sm"
+                >
+                  → {p.title}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <Link href="/check" className="text-accent-700 hover:text-accent-800 font-medium text-sm">
+                → Check your Shopify store's GEO score (free)
+              </Link>
+            </li>
+          </ul>
+        </section>
 
         {/* Tags at bottom */}
         <div className="mt-10 pt-6 border-t border-gray-200">
@@ -303,4 +373,16 @@ export default function BlogPostPage({ params }) {
       </article>
     </div>
   );
+}
+
+// Helper: get all other posts for internal linking hub (avoid circular import issues)
+function getAllPostsInternal(currentSlug) {
+  // Minimal list — mirrors lib/posts slugs/titles for cross-linking
+  const all = [
+    { slug: 'shopify-stores-ai-search-visibility', title: 'I Checked If Shopify Stores Show Up in ChatGPT' },
+    { slug: 'how-to-check-brand-visibility-chatgpt-perplexity', title: 'How to Check If Your Brand Shows Up in ChatGPT, Perplexity, and Google AI Overviews' },
+    { slug: 'geo-vs-seo-difference-2026', title: 'GEO vs SEO: The Difference That Actually Matters in 2026' },
+    { slug: 'get-shopify-store-mentioned-by-ai-search', title: '7 Ways to Get Your Shopify Store Recommended by AI Search Engines' },
+  ];
+  return all.filter((p) => p.slug !== currentSlug);
 }

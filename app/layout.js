@@ -3,10 +3,14 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 export const metadata = {
-  title: 'Shopify GEO Check - AI Search Visibility Analyzer | Free GEO Audit',
+  metadataBase: new URL('https://mygeocheck.com'),
+  title: {
+    default: 'Shopify GEO Check - AI Search Visibility Analyzer | Free GEO Audit',
+    template: '%s | My GEO Check',
+  },
   description: 'Check if your Shopify products are visible to AI search engines like ChatGPT, Perplexity, and Google AI Overviews. Free instant analysis with actionable GEO optimization tips.',
   keywords: 'GEO, generative engine optimization, AI search visibility, Shopify SEO, ChatGPT shopping, Perplexity, Google AI Overviews, GEO check, AI search optimization',
-  authors: [{ name: 'My GEO Check' }],
+  authors: [{ name: 'Luo Xin' }],
   robots: 'index, follow',
   icons: {
     icon: '/favicon.svg',
@@ -54,7 +58,28 @@ export default function RootLayout({ children }) {
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
-        {/* Schema.org JSON-LD */}
+        {/* Schema.org JSON-LD: Organization */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "My GEO Check",
+              url: "https://mygeocheck.com",
+              logo: "https://mygeocheck.com/favicon.svg",
+              founder: {
+                "@type": "Person",
+                name: "Luo Xin",
+              },
+              sameAs: [
+                "https://mygeocheck.com/blog",
+              ],
+              description: "AI-powered GEO visibility analysis tool for Shopify store owners.",
+            })
+          }}
+        />
+        {/* Schema.org JSON-LD: WebApplication */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
