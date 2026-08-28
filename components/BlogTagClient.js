@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { getAllTags, getPostsByTag } from '../../../../lib/posts';
-import { postsZh } from '../../../../lib/posts-zh';
+import { getAllTags, getPostsByTag } from '../lib/posts';
+import { postsZh } from '../lib/posts-zh';
 
 export default function TagClient({ tagSlug }) {
   const [lang, setLang] = useState('en');
