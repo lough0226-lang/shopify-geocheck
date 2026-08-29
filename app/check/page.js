@@ -268,7 +268,7 @@ export default function CheckPage() {
       return fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: inputUrl }),
+        body: JSON.stringify({ url: inputUrl, lang: lang }),
       })
       .then(function(res) {
         // Detect 504/503 timeout errors from Vercel concurrency limits
@@ -515,6 +515,13 @@ export default function CheckPage() {
 
             {/* URL Guide */}
             <UrlGuide lang={lang} />
+
+            {/* Language note */}
+            {lang !== 'en' && (
+              <p style={{ marginTop: 12, fontSize: 12, color: '#9ca3af', fontStyle: 'italic' }}>
+                🌐 {t.reportLanguageNote}
+              </p>
+            )}
           </form>
         </div>
       </section>

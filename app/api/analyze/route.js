@@ -97,7 +97,7 @@ function generateFallbackAnalysis(productData, url) {
  */
 export async function POST(request) {
   try {
-    const { url } = await request.json();
+    const { url, lang } = await request.json();
 
     if (!url || typeof url !== 'string') {
       return NextResponse.json(
@@ -145,7 +145,7 @@ export async function POST(request) {
     let analysisResult;
     let aiErrorInfo = null;
     try {
-      analysisResult = await analyzeProduct(productData, url);
+      analysisResult = await analyzeProduct(productData, url, lang || 'en');
       recordApiCall();
     } catch (aiError) {
       console.error('AI analysis failed after all retries:', aiError.message);
@@ -160,6 +160,7 @@ export async function POST(request) {
       result: analysisResult,
       timestamp: Date.now(),
       product_name: analysisResult.product_name || productData.title,
+      lang: lang || 'en',
     });
 
     // 返回结果
