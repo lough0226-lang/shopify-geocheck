@@ -1,9 +1,16 @@
+'use client';
+
+import { useLang, PAGE_CONTENT } from '../lib/i18n';
+
 export default function HowItWorks() {
+  const lang = useLang();
+  const p = PAGE_CONTENT[lang] || PAGE_CONTENT.en;
+
   const steps = [
     {
       number: '01',
-      title: 'Paste Your Product URL',
-      description: 'Enter any Shopify product page URL. We support both myshopify.com stores and custom domains.',
+      title: p.howStep1Title,
+      description: p.howStep1Desc,
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
@@ -12,8 +19,8 @@ export default function HowItWorks() {
     },
     {
       number: '02',
-      title: 'AI Analyzes Your Page',
-      description: 'Our AI engine checks 22+ GEO dimensions including title clarity, structured data, description quality, and AI-readability signals.',
+      title: p.howStep2Title,
+      description: p.howStep2Desc,
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -22,8 +29,8 @@ export default function HowItWorks() {
     },
     {
       number: '03',
-      title: 'Get Your Score & Fixes',
-      description: 'Receive your AI visibility score with 3 key issues for free. Unlock the full report with specific fixes and competitor insights.',
+      title: p.howStep3Title,
+      description: p.howStep3Desc,
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -37,10 +44,10 @@ export default function HowItWorks() {
       <div className="max-w-5xl mx-auto px-4">
         <div className="text-center mb-14">
           <h2 className="text-3xl md:text-4xl font-bold text-primary-700 mb-4">
-            How It Works
+            {p.howTitle}
           </h2>
           <p className="text-gray-600 text-lg max-w-xl mx-auto">
-            Get your AI search visibility score in 3 simple steps
+            {p.howSubtitle}
           </p>
         </div>
 
