@@ -11,25 +11,9 @@ export default function HomePage() {
 
       {/* 社会证明区域 */}
       <section className="py-12 bg-primary-700">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-3xl md:text-4xl font-bold text-white">12,500+</div>
-              <div className="text-primary-200 mt-1 text-sm">Products Analyzed</div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold text-white">3,200+</div>
-              <div className="text-primary-200 mt-1 text-sm">Store Owners</div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold text-accent-400">47%</div>
-              <div className="text-primary-200 mt-1 text-sm">Avg Score Improvement</div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold text-white">22</div>
-              <div className="text-primary-200 mt-1 text-sm">GEO Check Points</div>
-            </div>
-          </div>
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <div className="text-3xl md:text-4xl font-bold text-white">22</div>
+          <div className="text-primary-200 mt-1 text-sm">GEO Check Points</div>
         </div>
       </section>
 

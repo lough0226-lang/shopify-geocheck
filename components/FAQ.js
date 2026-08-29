@@ -22,7 +22,7 @@ export default function FAQ() {
     },
     {
       q: 'How accurate is the analysis?',
-      a: 'Our analysis is powered by GPT-4o-mini and trained on thousands of Shopify product pages and AI search patterns. While no tool can guarantee exact AI search rankings (since algorithms are proprietary), our checks are based on documented best practices for AI readability and have been validated across 12,500+ product analyses.',
+      a: 'Our analysis is powered by GPT-4o-mini and trained on thousands of Shopify product pages and AI search patterns. While no tool can guarantee exact AI search rankings (since algorithms are proprietary), our checks are based on documented best practices for AI readability.',
     },
     {
       q: 'Can I check multiple products?',

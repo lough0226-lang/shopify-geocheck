@@ -103,12 +103,7 @@ export default function RootLayout({ children }) {
                 "Multi-platform analysis (ChatGPT, Perplexity, Google AI Overviews)",
                 "Detailed PDF reports",
                 "Actionable SEO insights"
-              ],
-              "aggregateRating": {
-                "@type": "AggregateRating",
-                "ratingValue": "4.8",
-                "ratingCount": "156"
-              }
+              ]
             })
           }}
         />
