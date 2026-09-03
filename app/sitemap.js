@@ -8,34 +8,23 @@ export default function sitemap() {
   const staticPages = [
     {
       url: `${baseUrl}/`,
-      lastModified: new Date('2026-08-27'),
+      lastModified: new Date('2026-09-03'),
       changeFrequency: 'weekly',
       priority: 1.0,
     },
     {
       url: `${baseUrl}/check`,
-      lastModified: new Date('2026-08-27'),
+      lastModified: new Date('2026-09-03'),
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
       url: `${baseUrl}/blog`,
-      lastModified: new Date('2026-08-27'),
+      lastModified: new Date('2026-09-03'),
       changeFrequency: 'weekly',
       priority: 0.8,
     },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date('2026-08-27'),
-      changeFrequency: 'monthly',
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: new Date('2026-08-27'),
-      changeFrequency: 'monthly',
-      priority: 0.3,
-    },
+    // privacy and terms are noindex — excluded from sitemap
   ];
 
   const blogPosts = posts.map((post) => ({

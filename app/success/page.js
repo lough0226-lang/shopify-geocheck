@@ -82,7 +82,7 @@ export default function SuccessPage() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontSize: 72, marginBottom: 16 }}>&#x2705;</div>
           <h1 style={{ fontSize: 32, fontWeight: 700, color: '#111827', marginBottom: 12 }}>
-            Payment Successful!
+            Order Confirmed!
           </h1>
           <p style={{ color: '#4b5563', fontSize: 16, lineHeight: 1.6 }}>
             Thank you for your purchase. Your payment has been processed successfully.
