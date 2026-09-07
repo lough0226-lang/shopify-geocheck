@@ -1,7 +1,7 @@
 import { getAllPosts, getAllTags } from '../lib/posts';
 
 export default function sitemap() {
-  const baseUrl = 'https://mygeocheck.com';
+  const baseUrl = 'https://www.mygeocheck.com';
   const posts = getAllPosts();
   const tags = getAllTags();
 
