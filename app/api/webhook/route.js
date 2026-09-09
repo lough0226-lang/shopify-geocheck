@@ -38,16 +38,18 @@ export async function POST(request) {
     }
 
     const event = JSON.parse(rawBody);
-    const eventType = event.event || event.type || '';
+    // Creem sends eventType field and wraps data in event.object { order, customer, subscription... }
+    const eventType = event.eventType || event.event || event.type || '';
 
     if (eventType !== 'checkout.completed') {
       return NextResponse.json({ received: true, event: eventType });
     }
 
-    const payload = event.data || event;
-    const orderId = payload.order_id || payload.id || '';
-    const customerEmail = payload.customer?.email || payload.email || '';
-    const metadata = payload.metadata || {};
+    const orderData = event.object?.order || event.data?.object?.order || event.data || {};
+    const orderId = orderData.id || orderData.order_id || event.object?.id || '';
+    const customerData = event.object?.customer || event.data?.object?.customer || {};
+    const customerEmail = customerData.email || orderData.customer?.email || event.customer?.email || '';
+    const metadata = orderData.metadata || event.object?.subscription?.metadata || event.object?.checkout?.metadata || event.metadata || {};
     const reportId = metadata.report_id || '';
 
     console.log('Payment received:', { orderId, customerEmail, reportId });
