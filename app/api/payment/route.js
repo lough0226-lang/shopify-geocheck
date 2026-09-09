@@ -25,7 +25,9 @@ export async function POST(request) {
     }
 
     const apiKey = process.env.CREEM_API_KEY;
-    const productId = process.env.CREEM_PRODUCT_ID;
+    const productId = process.env.CREEM_PRODUCT_ID || process.env.NEXT_PUBLIC_CREEM_PRODUCT_ID;
+    const testMode = process.env.CREEM_TEST_MODE === 'true';
+    const creemBaseUrl = testMode ? 'https://test-api.creem.io' : 'https://api.creem.io';
 
     if (!apiKey) {
       console.error('CREEM_API_KEY not configured');
@@ -43,7 +45,10 @@ export async function POST(request) {
       );
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mygeocheck.com';
+    // Derive site URL from the incoming request so post-payment redirect works on any domain
+    const reqHost = request.headers.get('host') || '';
+    const reqProto = request.headers.get('x-forwarded-proto') || 'https';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (reqHost ? `${reqProto}://${reqHost}` : 'https://mygeocheck.com');
 
     // Build Creem checkout request
     const checkoutPayload = {
@@ -60,7 +65,7 @@ export async function POST(request) {
       checkoutPayload.customer = { email: email };
     }
 
-    const response = await fetch('https://api.creem.io/v1/checkouts', {
+    const response = await fetch(`${creemBaseUrl}/v1/checkouts`, {
       method: 'POST',
       headers: {
         'x-api-key': apiKey,
