@@ -99,7 +99,25 @@ class ErrorBoundary extends Component {
 }
 
 // ============ Inline Loading Component ============
-function LoadingView({ text, hint }) {
+function LoadingView({ text }) {
+  var COUNTDOWN = 10;
+  var [countdown, setCountdown] = useState(COUNTDOWN);
+  var [progress, setProgress] = useState(0);
+
+  useEffect(function() {
+    var interval = setInterval(function() {
+      setCountdown(function(prev) {
+        if (prev <= 1) return 0;
+        return prev - 1;
+      });
+      setProgress(function(prev) {
+        var next = prev + (100 / COUNTDOWN);
+        return next > 100 ? 100 : next;
+      });
+    }, 1000);
+    return function() { clearInterval(interval); };
+  }, []);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0' }}>
       <div style={{ position: 'relative', width: 64, height: 64, marginBottom: 24 }}>
@@ -119,20 +137,11 @@ function LoadingView({ text, hint }) {
         </div>
       </div>
       <p style={{ color: '#4b5563', fontWeight: 500, fontSize: 18, marginBottom: 8 }}>{text || 'Analyzing...'}</p>
-      <p style={{ color: '#9ca3af', fontSize: 14 }}>{hint || 'This usually takes 15-30 seconds'}</p>
+      <p style={{ color: '#9ca3af', fontSize: 14, marginBottom: 0 }}>⏱ {countdown > 0 ? countdown + 's' : 'Almost done...'}</p>
       <div style={{ width: 256, marginTop: 24, height: 6, background: '#e5e7eb', borderRadius: 999, overflow: 'hidden' }}>
-        <div style={{ height: '100%', background: '#1e3a5f', borderRadius: 999, animation: 'loading 20s ease-in-out infinite' }} />
+        <div style={{ height: '100%', width: progress + '%', background: '#1e3a5f', borderRadius: 999, transition: 'width 1s linear' }} />
       </div>
       <style>{`
-        @keyframes loading {
-          0% { width: 0%; }
-          20% { width: 25%; }
-          40% { width: 45%; }
-          60% { width: 60%; }
-          80% { width: 80%; }
-          95% { width: 90%; }
-          100% { width: 95%; }
-        }
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
@@ -145,6 +154,7 @@ function LoadingView({ text, hint }) {
     </div>
   );
 }
+
 
 // ============ Inline Issue Card ============
 function IssueCard({ issue, lang }) {
