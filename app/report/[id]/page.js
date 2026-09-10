@@ -31,7 +31,7 @@ export default function ReportPage() {
     if (typeof window !== 'undefined') {
       var search = new URLSearchParams(window.location.search);
       var status = search.get('status');
-      var oid = search.get('order_id');
+      var oid = search.get('order_id') || search.get('subscription_id') || '';
       if (status === 'success' && oid) {
         setPaymentVerified(true);
         setOrderId(oid);

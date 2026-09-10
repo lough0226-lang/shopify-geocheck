@@ -53,7 +53,7 @@ export async function POST(request) {
     // Build Creem checkout request
     const checkoutPayload = {
       product_id: productId,
-      success_url: `${baseUrl}/report/${report_id}?checkout_id={CHECKOUT_ID}&order_id={ORDER_ID}&status=success`,
+      success_url: `${baseUrl}/report/${report_id}?status=success`,
       metadata: {
         report_id: report_id,
         source: 'mygeocheck.com',
