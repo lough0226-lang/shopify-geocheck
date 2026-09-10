@@ -188,6 +188,8 @@ export function getQueueStats() {
  * Send the full report email via Brevo
  */
 async function sendReportEmail(reportId, email) {
+  // Use dynamic site URL from env or fallback
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mygeocheck.com';
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) throw new Error('BREVO_API_KEY not configured');
 
@@ -216,7 +218,7 @@ async function sendReportEmail(reportId, email) {
       </ul>
     </div>
     <div style="text-align:center;margin:24px 0;">
-      <a href="https://mygeocheck.com/report/${reportId}" style="display:inline-block;background:#10b981;color:#fff;font-weight:700;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:16px;">View Your Full Report</a>
+      <a href="${siteUrl}/report/${reportId}" style="display:inline-block;background:#10b981;color:#fff;font-weight:700;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:16px;">View Your Full Report</a>
     </div>
     <p style="color:#6b7280;font-size:13px;text-align:center;">
       Need help? Contact us at hello@mygeocheck.com
@@ -238,6 +240,7 @@ async function sendReportEmail(reportId, email) {
  * Simpler content = more likely to succeed
  */
 export async function sendFallbackEmail(reportId, email) {
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mygeocheck.com';
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) return false;
 
@@ -252,8 +255,8 @@ export async function sendFallbackEmail(reportId, email) {
         htmlContent: `<html><body style="font-family:Arial,sans-serif;padding:20px;">
           <h2>Your GEO Visibility Report is Ready</h2>
           <p>Click below to view your full report:</p>
-          <p><a href="https://mygeocheck.com/report/${reportId}" style="background:#10b981;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Open Report #${reportId}</a></p>
-          <p style="color:#666;font-size:13px;">Or copy this link: https://mygeocheck.com/report/${reportId}</p>
+          <p><a href="${siteUrl}/report/${reportId}" style="background:#10b981;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Open Report #${reportId}</a></p>
+          <p style="color:#666;font-size:13px;">Or copy this link: ${siteUrl}/report/${reportId}</p>
           <p style="color:#666;font-size:13px;">Questions? Reply to this email.</p>
         </body></html>`,
       }),
@@ -283,6 +286,7 @@ export async function retryQueuedDelivery(item) {
  * Send alert to site owner
  */
 async function sendOwnerAlert({ type, orderId, reportId, customerEmail, error, message }) {
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mygeocheck.com';
   const apiKey = process.env.BREVO_API_KEY;
   const ownerEmail = process.env.OWNER_EMAIL || 'mygeocheck@coze.email';
   if (!apiKey) return;
@@ -304,7 +308,7 @@ async function sendOwnerAlert({ type, orderId, reportId, customerEmail, error, m
             <p><strong>Error:</strong> ${error}</p>
             <p><strong>Time:</strong> ${new Date().toISOString()}</p>
             <p style="color:#666;">${message || ''}</p>
-            <p>Report link: <a href="https://mygeocheck.com/report/${reportId}">View</a></p>
+            <p>Report link: <a href="${siteUrl}/report/${reportId}">View</a></p>
           </div>
         </body></html>`,
       }),

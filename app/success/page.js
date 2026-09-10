@@ -106,7 +106,7 @@ export default function SuccessPage() {
               Open Full Report →
             </a>
             <p style={{ color: '#6b7280', fontSize: 12, marginTop: 12 }}>
-              Bookmark this page: mygeocheck.com/report/{reportId}
+              Bookmark this page: {typeof window !== 'undefined' ? window.location.hostname : 'mygeocheck.com'}/report/{reportId}
             </p>
           </div>
         )}

@@ -40,6 +40,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email service not configured' }, { status: 500 });
     }
 
+    const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mygeocheck.com';
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
@@ -55,12 +56,12 @@ export async function POST(request) {
       Here is your report. Click below to view it:
     </p>
     <div style="text-align:center;margin:24px 0;">
-      <a href="https://mygeocheck.com/report/${report_id}" style="display:inline-block;background:#10b981;color:#fff;font-weight:700;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:16px;">
+      <a href="${siteUrl}/report/${report_id}" style="display:inline-block;background:#10b981;color:#fff;font-weight:700;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:16px;">
         View Your Full Report
       </a>
     </div>
     <p style="color:#6b7280;font-size:13px;text-align:center;">
-      Direct link: https://mygeocheck.com/report/${report_id}
+      Direct link: ${siteUrl}/report/${report_id}
     </p>
     <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;padding:16px;margin:20px 0;">
       <p style="color:#047857;font-size:14px;margin:0;">

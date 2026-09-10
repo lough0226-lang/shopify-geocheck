@@ -48,7 +48,7 @@ export async function POST(request) {
     // Derive site URL from the incoming request so post-payment redirect works on any domain
     const reqHost = request.headers.get('host') || '';
     const reqProto = request.headers.get('x-forwarded-proto') || 'https';
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (reqHost ? `${reqProto}://${reqHost}` : 'https://mygeocheck.com');
+    const baseUrl = reqHost ? `${reqProto}://${reqHost}` : (process.env.NEXT_PUBLIC_BASE_URL || 'https://mygeocheck.com');
 
     // Build Creem checkout request
     const checkoutPayload = {
