@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation';
 import { getAllPosts, getPostBySlug, getWordCount, author } from '../../../lib/posts';
 import BlogPostClient from '../../../components/BlogPostClient';
 
+// 文章内容更新后最多 60 秒自动重新生成
+export const revalidate = 60;
+
 export async function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
 }
