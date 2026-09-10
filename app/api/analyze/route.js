@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { scrapeProductPage, isValidShopifyUrl } from '../../../lib/scraper';
 import { analyzeProduct } from '../../../lib/openai';
+import { recordEvent, domainFromUrl } from '../../../lib/analytics';
 
 // 强制使用 Node.js 运行时（非 Edge Runtime）
 export const runtime = 'nodejs';
@@ -97,7 +98,7 @@ function generateFallbackAnalysis(productData, url) {
  */
 export async function POST(request) {
   try {
-    const { url, lang } = await request.json();
+    const { url, lang, email } = await request.json();
 
     if (!url || typeof url !== 'string') {
       return NextResponse.json(
@@ -105,6 +106,13 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Analytics: every analysis attempt (fire-and-forget, never blocks)
+    recordEvent('analysis_started', {
+      domain: domainFromUrl(url),
+      email: typeof email === 'string' && email.includes('@') ? email.trim() : null,
+      lang: lang || 'en',
+    });
 
     if (!isValidShopifyUrl(url)) {
       return NextResponse.json(
@@ -155,13 +163,27 @@ export async function POST(request) {
 
     // 生成报告 ID 并存储
     const reportId = crypto.randomUUID();
+    const customerEmail = typeof email === 'string' && email.includes('@') ? email.trim().toLowerCase() : null;
     reportStore.set(reportId, {
       url,
+      domain: domainFromUrl(url),
+      email: customerEmail,
       result: analysisResult,
       timestamp: Date.now(),
       product_name: analysisResult.product_name || productData.title,
       lang: lang || 'en',
+      unlocked: false,
     });
+
+    // Analytics: degraded AI result flag
+    if (analysisResult._fallback) {
+      recordEvent('analysis_fallback', {
+        report_id: reportId,
+        domain: domainFromUrl(url),
+        email: customerEmail,
+        reason: aiErrorInfo || 'ai_analysis_failed',
+      });
+    }
 
     // 返回结果
     const responseData = {

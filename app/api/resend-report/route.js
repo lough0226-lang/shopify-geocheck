@@ -1,6 +1,7 @@
 // POST /api/resend-report
 // Customer self-service: resend report email
 import { NextResponse } from 'next/server';
+import { recordEvent } from '../../../lib/analytics';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -82,13 +83,23 @@ export async function POST(request) {
 
     if (!res.ok) {
       console.error('Resend email failed:', res.status);
+      recordEvent('report_email', {
+        report_id, email, status: 'failed', error: 'brevo_status_' + res.status, source: 'resend',
+      });
       return NextResponse.json({ error: 'Failed to send email. Please try again or contact hello@mygeocheck.com' }, { status: 500 });
     }
 
     recordResend(report_id);
+    recordEvent('report_email', {
+      report_id, email, status: 'sent', source: 'resend',
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Resend error:', error);
+    recordEvent('report_email', {
+      report_id, email: (typeof email === 'string' ? email : null),
+      status: 'failed', error: error.message || 'server_error', source: 'resend',
+    });
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

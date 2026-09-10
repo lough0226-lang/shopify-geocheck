@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { recordWebhookFailure } from '../../../lib/health-monitor.js';
+import { recordEvent } from '../../../lib/analytics';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -54,6 +55,16 @@ export async function POST(request) {
 
     console.log('Payment received:', { orderId, customerEmail, reportId });
 
+    // Analytics: payment event with order/amount/email/subscription status
+    recordEvent('payment_checkout_completed', {
+      order_id: orderId || null,
+      amount: orderData.amount ?? orderData.amount_paid ?? null,
+      currency: orderData.currency || 'USD',
+      email: customerEmail || null,
+      report_id: reportId || null,
+      subscription_status: orderData.status || event.object?.subscription?.status || 'paid',
+    });
+
     // Prevent duplicate processing from Creem retries
     if (orderId && processedOrders.has(orderId)) {
       console.log('Order already processed, skipping:', orderId);
@@ -103,6 +114,13 @@ async function deliverWithFullPipeline(reportId, email, orderId) {
     try {
       await sendReportEmail(reportId, email);
       console.log('Report email delivered:', { reportId, email, attempt: i + 1 });
+      recordEvent('report_email', {
+        report_id: reportId,
+        email,
+        order_id: orderId || null,
+        status: 'sent',
+        attempts: i + 1,
+      });
       return; // Success!
     } catch (err) {
       lastError = err.message;
@@ -114,6 +132,14 @@ async function deliverWithFullPipeline(reportId, email, orderId) {
   console.error('All immediate retry attempts failed:', { reportId, email, orderId, lastError });
   recordWebhookFailure('email_delivery_failed', {
     order_id: orderId, report_id: reportId, customer_email: email, error: lastError, attempts: delays.length,
+  });
+  recordEvent('report_email', {
+    report_id: reportId,
+    email,
+    order_id: orderId || null,
+    status: 'failed',
+    error: lastError,
+    attempts: delays.length,
   });
 
   // Phase 2: Add to queue for background retry

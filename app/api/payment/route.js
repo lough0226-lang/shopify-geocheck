@@ -1,5 +1,6 @@
 // Creem.io Payment Integration - Checkout Session Creator
 import { NextResponse } from 'next/server';
+import { recordEvent } from '../../../lib/analytics';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -15,7 +16,8 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request) {
   try {
-    const { report_id, email } = await request.json();
+    const { report_id, email: rawEmail } = await request.json();
+    const email = typeof rawEmail === 'string' && rawEmail.includes('@') ? rawEmail.trim() : null;
 
     if (!report_id) {
       return NextResponse.json(
@@ -60,9 +62,10 @@ export async function POST(request) {
       },
     };
 
-    // Add customer email if provided (pre-fills checkout form)
+    // Add customer email if provided (pre-fills checkout form + ties subscription to customer)
     if (email) {
       checkoutPayload.customer = { email: email };
+      checkoutPayload.metadata = { ...checkoutPayload.metadata, email: email };
     }
 
     const response = await fetch(`${creemBaseUrl}/v1/checkouts`, {
@@ -93,6 +96,12 @@ export async function POST(request) {
         { status: 500 }
       );
     }
+
+    recordEvent('payment_created', {
+      checkout_id: data.id || null,
+      report_id,
+      email: email || null,
+    });
 
     return NextResponse.json({
       checkout_url: checkoutUrl,
