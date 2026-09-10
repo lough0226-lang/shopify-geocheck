@@ -20,7 +20,7 @@ export default function LoadingSpinner({ text }) {
         </div>
       </div>
       <p style={{ color: '#4b5563', fontWeight: 500, fontSize: 18, marginBottom: 8 }}>{text || 'Analyzing...'}</p>
-      <p style={{ color: '#9ca3af', fontSize: 14 }}>This usually takes 15-30 seconds</p>
+      <p style={{ color: '#9ca3af', fontSize: 14 }}>This usually takes about 10 seconds</p>
       <div style={{ width: 256, marginTop: 24, height: 6, background: '#e5e7eb', borderRadius: 999, overflow: 'hidden' }}>
         <div style={{ height: '100%', background: '#1e3a5f', borderRadius: 999, animation: 'lsLoading 20s ease-in-out infinite' }} />
       </div>

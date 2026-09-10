@@ -30,8 +30,8 @@ export default function BlogListClient() {
     : 'Practical articles on how Shopify stores can win visibility in AI-powered search engines like ChatGPT, Perplexity, and Google AI Overviews.';
   const ctaTitle = isZh ? '检测你店铺的 GEO 评分' : "Check Your Store's GEO Score";
   const ctaDesc = isZh
-    ? '30 秒内查看你的 Shopify 店铺在各 AI 搜索引擎中的可见度。'
-    : 'See how visible your Shopify store is across AI search engines in under 30 seconds.';
+    ? '约 10 秒即可查看你的 Shopify 店铺在各 AI 搜索引擎中的可见度。'
+    : 'See how visible your Shopify store is across AI search engines in about 10 seconds.';
   const ctaBtn = isZh ? '免费开始 GEO 检测 →' : 'Run Free GEO Check →';
 
   return (
