@@ -8,12 +8,13 @@ export default function ReportPage() {
   var reportId = null;
 
   // Extract report ID from URL path /report/[id]
+  // Supports both numeric IDs and UUID format
   if (typeof window !== 'undefined') {
-    var parts = window.location.pathname.split('/');
-    for (var pi = 0; pi < parts.length; pi++) {
-      if (parts[pi] && !isNaN(parseInt(parts[pi]))) {
-        reportId = parts[pi];
-        break;
+    var reportIdx = pathname.indexOf('/report/');
+    if (reportIdx !== -1) {
+      var segment = pathname.substring(reportIdx + 8).replace(/\/$/, '').split('/')[0];
+      if (segment) {
+        reportId = segment;
       }
     }
   }

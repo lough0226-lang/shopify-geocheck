@@ -14,7 +14,7 @@ export default function SuccessPage() {
     if (typeof window !== 'undefined') {
       var search = new URLSearchParams(window.location.search);
       var status = search.get('status') || '';
-      var oid = search.get('order_id') || '';
+      var oid = search.get('order_id') || search.get('subscription_id') || '';
       setParams({
         checkout_id: search.get('checkout_id') || '',
         order_id: oid,
