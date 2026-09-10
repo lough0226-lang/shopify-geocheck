@@ -696,6 +696,11 @@ export default function CheckPage() {
                   <p style={{ fontSize: 12, marginTop: 16, color: '#6ee7b7' }}>
                     {t.ctaGuarantee} &bull; {t.ctaGuarantee2} &bull; {t.ctaGuarantee3}
                   </p>
+                  {t.ctaPriceNote && (
+                    <p style={{ fontSize: 11, marginTop: 10, marginBottom: 0, color: '#8bb5db', lineHeight: 1.6, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>
+                      {'\u2139\uFE0F'} {t.ctaPriceNote}
+                    </p>
+                  )}
                 </div>
               </div>
 

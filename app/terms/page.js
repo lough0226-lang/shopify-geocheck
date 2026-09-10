@@ -29,15 +29,16 @@ export default function TermsPage() {
             </ul>
             <p>The free analysis is provided &quot;as is&quot; for informational purposes.</p>
 
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>3. Paid Reports</h2>
-            <p>The paid GEO Visibility Report ($29.00 USD) provides:</p>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>3. Paid Subscription</h2>
+            <p>The full GEO Visibility Report is provided as a monthly subscription priced at $29.00 USD per month, processed through Creem.io. An active subscription provides:</p>
             <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-              <li>Complete analysis with all 22+ GEO checkpoints</li>
+              <li>Complete analysis with all 22+ GEO checkpoints on every report</li>
               <li>Detailed fix recommendations</li>
               <li>Quick wins and strategic recommendations</li>
               <li>Priority-ranked action items</li>
+              <li>Unlimited re-checks and full reports for any number of products while the subscription is active</li>
             </ul>
-            <p>By purchasing a report, you receive a single-use license to view the report for the URL you submitted. Reports are non-transferable and for personal/business use only.</p>
+            <p><strong>Billing and renewal:</strong> The subscription renews automatically each month at $29.00 USD until cancelled. You can cancel at any time, self-service, in the Creem customer billing portal (via the &quot;Manage Subscription&quot; link on your payment confirmation page or in your report email). After cancelling, you keep full access until the end of the current billing period and you will not be charged again.</p>
 
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>4. Payment &amp; Refunds</h2>
             <p>Payments are processed through Creem.io. By making a purchase, you agree to Creem.io&apos;s terms.</p>
