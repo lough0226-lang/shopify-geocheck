@@ -62,7 +62,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <img src="/logo.png" srcSet="/logo.png 1x, /logo@2x.png 2x" alt="mygeocheck" className="h-12" />
+            <img src="/logo.png" srcSet="/logo.png 1x, /logo@2x.png 2x" alt="mygeocheck" className="h-16" />
           </Link>
 
           {/* Desktop Nav */}
