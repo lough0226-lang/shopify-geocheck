@@ -13,7 +13,8 @@ export const metadata = {
   authors: [{ name: 'Luo Xin' }],
   robots: 'index, follow',
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.png',
+    apple: '/apple-touch-icon.png',
   },
   openGraph: {
     title: 'Shopify GEO Check - AI Search Visibility Analyzer',
@@ -37,7 +38,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -67,7 +69,7 @@ export default function RootLayout({ children }) {
               "@type": "Organization",
               name: "My GEO Check",
               url: "https://mygeocheck.com",
-              logo: "https://mygeocheck.com/favicon.svg",
+              logo: "https://mygeocheck.com/logo.png",
               founder: {
                 "@type": "Person",
                 name: "Luo Xin",

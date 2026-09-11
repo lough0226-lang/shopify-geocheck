@@ -61,13 +61,8 @@ export default function Header() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="bg-primary-700 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm">
-              G
-            </div>
-            <span className="font-bold text-lg text-primary-700">
-              GEO<span className="text-accent-500">Check</span>
-            </span>
+          <Link href="/" className="flex items-center">
+            <img src="/logo.png" srcSet="/logo.png 1x, /logo@2x.png 2x" alt="mygeocheck" className="h-9" />
           </Link>
 
           {/* Desktop Nav */}
