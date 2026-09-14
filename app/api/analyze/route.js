@@ -1,9 +1,11 @@
 // 分析 API - 接收产品 URL，抓取页面内容，调用 AI 分析
+// v2: 使用 PostgreSQL 持久化存储
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { scrapeProductPage, isValidShopifyUrl } from '../../../lib/scraper';
 import { analyzeProduct } from '../../../lib/openai';
 import { recordEvent, domainFromUrl } from '../../../lib/analytics';
+import { saveReport, getReport, updateApiUsage, getApiUsage, initDatabase } from '../../../lib/db';
 
 // 强制使用 Node.js 运行时（非 Edge Runtime）
 export const runtime = 'nodejs';
@@ -12,50 +14,19 @@ export const dynamic = 'force-dynamic';
 // Vercel 函数最大执行时间（Pro 计划 60s，Hobby 计划 10s）
 export const maxDuration = 60;
 
-// 内存存储：暂存分析结果（用于付费后查看完整报告）
-const reportStore = new Map();
+// 数据库自动初始化标志（serverless 环境每个实例只执行一次）
+let dbInitialized = false;
 
-// 月度 API 预算追踪
-const apiUsageTracker = {
-  currentMonth: new Date().toISOString().slice(0, 7),
-  callCount: 0,
-  estimatedCost: 0,
-  COST_PER_CALL: 0.02,
-};
-
-function checkBudgetLimit() {
-  const now = new Date();
-  const currentMonth = now.toISOString().slice(0, 7);
-  
-  if (apiUsageTracker.currentMonth !== currentMonth) {
-    apiUsageTracker.currentMonth = currentMonth;
-    apiUsageTracker.callCount = 0;
-    apiUsageTracker.estimatedCost = 0;
-    console.log(`[Budget] Month reset: ${currentMonth}`);
+async function ensureDbReady() {
+  if (dbInitialized) return;
+  try {
+    await initDatabase();
+    dbInitialized = true;
+    console.log('[DB] Auto-init completed');
+  } catch (err) {
+    console.warn('[DB] Auto-init failed (non-critical):', err.message);
+    // 不阻断请求，后续请求会重试
   }
-  
-  const monthlyBudget = parseFloat(process.env.MONTHLY_API_BUDGET || '50');
-  const warningThreshold = monthlyBudget * 0.8;
-  
-  if (apiUsageTracker.estimatedCost >= monthlyBudget) {
-    return {
-      allowed: false,
-      reason: `Monthly API budget of $${monthlyBudget} exceeded. Current: $${apiUsageTracker.estimatedCost.toFixed(2)}`,
-      usage: apiUsageTracker,
-    };
-  }
-  
-  if (apiUsageTracker.estimatedCost >= warningThreshold) {
-    console.warn(`[Budget] WARNING: Approaching limit. $${apiUsageTracker.estimatedCost.toFixed(2)} / $${monthlyBudget}`);
-  }
-  
-  return { allowed: true, usage: apiUsageTracker };
-}
-
-function recordApiCall() {
-  apiUsageTracker.callCount++;
-  apiUsageTracker.estimatedCost += apiUsageTracker.COST_PER_CALL;
-  console.log(`[Budget] Call #${apiUsageTracker.callCount}, estimated cost: $${apiUsageTracker.estimatedCost.toFixed(2)}`);
 }
 
 /**
@@ -98,6 +69,9 @@ function generateFallbackAnalysis(productData, url) {
  */
 export async function POST(request) {
   try {
+    // 确保数据库表已创建
+    await ensureDbReady();
+
     const { url, lang, email } = await request.json();
 
     if (!url || typeof url !== 'string') {
@@ -127,7 +101,6 @@ export async function POST(request) {
       productData = await scrapeProductPage(url);
     } catch (scrapeError) {
       console.error('Scraping failed:', scrapeError.message);
-      // 返回结构化错误信息，前端可展示用户友好的提示
       return NextResponse.json(
         {
           error: scrapeError.message || 'Could not access the product page.',
@@ -140,40 +113,68 @@ export async function POST(request) {
       );
     }
 
-    // 检查月度 API 预算
-    const budgetCheck = checkBudgetLimit();
-    if (!budgetCheck.allowed) {
+    // 检查月度 API 预算（从数据库读取）
+    let apiUsage;
+    try {
+      apiUsage = await getApiUsage();
+    } catch (err) {
+      // DB unavailable - use fallback memory-based check
+      console.warn('[Budget] DB unavailable, using default values');
+      apiUsage = { call_count: 0, estimated_cost: 0 };
+    }
+
+    const monthlyBudget = parseFloat(process.env.MONTHLY_API_BUDGET || '50');
+    const cost = parseFloat(apiUsage.estimated_cost) || 0;
+
+    if (cost >= monthlyBudget) {
       return NextResponse.json(
         { error: 'Service temporarily unavailable due to high demand. Please try again next month.' },
         { status: 503 }
       );
     }
 
-    // 调用 AI 分析（lib/openai.js 内部已有 3 次重试 + 指数退避）
+    if (cost >= monthlyBudget * 0.8) {
+      console.warn(`[Budget] WARNING: Approaching limit. $${cost.toFixed(2)} / $${monthlyBudget}`);
+    }
+
+    // 调用 AI 分析（lib/openai.js 内部已有重试机制）
     let analysisResult;
     let aiErrorInfo = null;
     try {
       analysisResult = await analyzeProduct(productData, url, lang || 'en');
-      recordApiCall();
+      // AI 成功才记用量
+      await updateApiUsage();
     } catch (aiError) {
       console.error('AI analysis failed after all retries:', aiError.message);
       aiErrorInfo = aiError.message;
       analysisResult = generateFallbackAnalysis(productData, url);
     }
 
-    // 生成报告 ID 并存储
+    // 保存到数据库
     const reportId = crypto.randomUUID();
     const customerEmail = typeof email === 'string' && email.includes('@') ? email.trim().toLowerCase() : null;
-    reportStore.set(reportId, {
-      url,
-      domain: domainFromUrl(url),
-      email: customerEmail,
-      result: analysisResult,
-      timestamp: Date.now(),
-      product_name: analysisResult.product_name || productData.title,
-      lang: lang || 'en',
-      unlocked: false,
-    });
+
+    try {
+      await saveReport({
+        reportId,
+        url,
+        domain: domainFromUrl(url),
+        email: customerEmail,
+        product_name: analysisResult.product_name || productData.title,
+        store_name: analysisResult.store_name || '',
+        score: analysisResult.score || 0,
+        free_issues: analysisResult.free_issues || [],
+        full_report: analysisResult.full_report || null,
+        lang: lang || 'en',
+        unlocked: false,
+        ai_error: aiErrorInfo,
+        is_fallback: analysisResult._fallback || false,
+      });
+      console.log('[DB] Report saved:', reportId);
+    } catch (dbErr) {
+      console.error('[DB] Failed to save report:', dbErr.message);
+      // DB 失败不阻断返回，用户仍能看到结果
+    }
 
     // Analytics: degraded AI result flag
     if (analysisResult._fallback) {
@@ -202,7 +203,8 @@ export async function POST(request) {
       responseData._ai_error = aiErrorInfo;
     }
     if (process.env.NODE_ENV === 'development') {
-      responseData._api_usage = budgetCheck.usage;
+      const freshUsage = await getApiUsage().catch(() => ({ call_count: 0, estimated_cost: 0 }));
+      responseData._api_usage = freshUsage;
     }
     return NextResponse.json(responseData);
   } catch (error) {
@@ -231,7 +233,13 @@ export async function GET(request) {
     );
   }
 
-  const report = reportStore.get(reportId);
+  let report;
+  try {
+    report = await getReport(reportId);
+  } catch (err) {
+    console.error('[DB] getReport failed:', err.message);
+  }
+
   if (!report) {
     return NextResponse.json(
       { error: 'Report not found or has expired. Please run a new analysis.' },
@@ -243,8 +251,11 @@ export async function GET(request) {
     success: true,
     url: report.url,
     product_name: report.product_name,
-    ...report.result,
+    store_name: report.store_name || '',
+    score: report.score,
+    free_issues: report.free_issues || [],
+    full_report: report.full_report || null,
+    lang: report.lang || 'en',
+    unlocked: report.unlocked,
   });
 }
-
-export { reportStore };

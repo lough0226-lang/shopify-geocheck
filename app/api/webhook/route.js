@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { recordWebhookFailure } from '../../../lib/health-monitor.js';
 import { recordEvent } from '../../../lib/analytics';
+import { saveOrder, unlockReport } from '../../../lib/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -54,6 +55,22 @@ export async function POST(request) {
     const reportId = metadata.report_id || '';
 
     console.log('Payment received:', { orderId, customerEmail, reportId });
+
+    // Save order to database (fire-and-forget, don't block response)
+    saveOrder({
+      order_id: orderId,
+      report_id: reportId || null,
+      email: customerEmail || null,
+      amount: orderData.amount ?? orderData.amount_paid ?? null,
+      currency: orderData.currency || 'USD',
+      status: 'paid',
+      subscription_id: event.object?.subscription?.id || null,
+    }).catch(err => console.error('[DB] saveOrder failed:', err.message));
+
+    // Unlock the report in database
+    if (reportId) {
+      unlockReport(reportId).catch(err => console.error('[DB] unlockReport failed:', err.message));
+    }
 
     // Analytics: payment event with order/amount/email/subscription status
     recordEvent('payment_checkout_completed', {
