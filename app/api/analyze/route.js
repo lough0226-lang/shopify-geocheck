@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { scrapeProductPage, isValidShopifyUrl } from '../../../lib/scraper';
 import { analyzeProduct } from '../../../lib/openai';
 import { recordEvent, domainFromUrl } from '../../../lib/analytics';
-import { saveReport, getReport, updateApiUsage, getApiUsage, initDatabase } from '../../../lib/db';
+import { saveReport, getReport, updateApiUsage, getApiUsage, initDatabase, getActiveSubscription, getSubscriptionUsage, incrementSubscriptionUsage } from '../../../lib/db';
 
 // 强制使用 Node.js 运行时（非 Edge Runtime）
 export const runtime = 'nodejs';
@@ -95,6 +95,38 @@ export async function POST(request) {
       );
     }
 
+    // 订阅额度检查：月订阅用户每月最多 5 份完整报告
+    const customerEmail = typeof email === 'string' && email.includes('@') ? email.trim().toLowerCase() : null;
+    let subscription = null;
+    let monthlyUsed = 0;
+
+    if (customerEmail) {
+      try {
+        subscription = await getActiveSubscription(customerEmail);
+        if (subscription && subscription.plan_type === 'monthly') {
+          monthlyUsed = await getSubscriptionUsage(customerEmail);
+          if (monthlyUsed >= 5) {
+            return NextResponse.json({
+              success: true,
+              score: 0,
+              product_name: '',
+              store_name: '',
+              free_issues: [],
+              full_report: null,
+              report_id: null,
+              total_issues_count: 0,
+              quota_exceeded: true,
+              monthly_used: 5,
+              monthly_limit: 5,
+              message: 'You have used all 5 reports included in your monthly plan. Each additional report is $9, or wait for next month to reset.',
+            });
+          }
+        }
+      } catch (quotaErr) {
+        console.warn('[Quota] Subscription check failed (non-critical):', quotaErr.message);
+      }
+    }
+
     // 抓取产品页面内容
     let productData;
     try {
@@ -152,7 +184,6 @@ export async function POST(request) {
 
     // 保存到数据库
     const reportId = crypto.randomUUID();
-    const customerEmail = typeof email === 'string' && email.includes('@') ? email.trim().toLowerCase() : null;
 
     try {
       await saveReport({
@@ -174,6 +205,16 @@ export async function POST(request) {
     } catch (dbErr) {
       console.error('[DB] Failed to save report:', dbErr.message);
       // DB 失败不阻断返回，用户仍能看到结果
+    }
+
+    // 订阅用户用量追踪
+    if (subscription && subscription.plan_type === 'monthly') {
+      try {
+        await incrementSubscriptionUsage(customerEmail, 'monthly');
+        console.log('[Quota] Monthly usage incremented for', customerEmail);
+      } catch (usageErr) {
+        console.warn('[Quota] Failed to track usage:', usageErr.message);
+      }
     }
 
     // Analytics: degraded AI result flag
