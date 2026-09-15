@@ -99,7 +99,7 @@ export default function ReportPage() {
           }} />
           <style>{'@keyframes reportSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }'}</style>
           <p style={{ color: '#4b5563', fontWeight: 500, fontSize: 18 }}>Loading your full report...</p>
-          <p style={{ color: '#9ca3af', fontSize: 14, marginTop: 4 }}>This usually takes a moment</p>
+          <p style={{ color: '#9ca3af', fontSize: 14, marginTop: 4 }}>Results ready in about 10 seconds</p>
         </div>
       </div>
     );
