@@ -15,7 +15,7 @@ export default function Footer() {
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <Link href="/" className="flex items-center">
-                <img src="/logo.png" srcSet="/logo.png 1x, /logo@2x.png 2x" alt="mygeocheck" className="h-[40px]" />
+                <img src="/footer-logo.png" alt="mygeocheck" className="h-[48px]" />
               </Link>
             </div>
             <p className="text-primary-300 text-sm max-w-sm mb-4">{p.footerBrandDesc}</p>

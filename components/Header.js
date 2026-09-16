@@ -28,12 +28,12 @@ function detectLanguage() {
 
 // Nav labels per language
 const NAV_LABELS = {
-  en: { howItWorks: 'How It Works', pricing: 'Pricing', faq: 'FAQ', blog: 'Blog', freeCheck: 'Free Check', myReports: 'My Reports' },
-  zh: { howItWorks: '工作原理', pricing: '价格', faq: '常见问题', blog: '博客', freeCheck: '免费检测', myReports: '我的报告' },
-  de: { howItWorks: 'So funktioniert\'s', pricing: 'Preise', faq: 'FAQ', blog: 'Blog', freeCheck: 'Gratis testen', myReports: 'Meine Berichte' },
-  fr: { howItWorks: 'Comment ça marche', pricing: 'Tarifs', faq: 'FAQ', blog: 'Blog', freeCheck: 'Test gratuit', myReports: 'Mes rapports' },
-  es: { howItWorks: 'Cómo funciona', pricing: 'Precios', faq: 'FAQ', blog: 'Blog', freeCheck: 'Prueba gratis', myReports: 'Mis informes' },
-  pt: { howItWorks: 'Como funciona', pricing: 'Preços', faq: 'FAQ', blog: 'Blog', freeCheck: 'Teste grátis', myReports: 'Meus relatórios' },
+  en: { howItWorks: 'Features', pricing: 'Pricing', faq: 'FAQ', blog: 'Blog', freeCheck: 'Free Check', myReports: 'My Reports' },
+  zh: { howItWorks: '功能', pricing: '价格', faq: '常见问题', blog: '博客', freeCheck: '免费检测', myReports: '我的报告' },
+  de: { howItWorks: 'Funktionen', pricing: 'Preise', faq: 'FAQ', blog: 'Blog', freeCheck: 'Gratis testen', myReports: 'Meine Berichte' },
+  fr: { howItWorks: 'Fonctionnalités', pricing: 'Tarifs', faq: 'FAQ', blog: 'Blog', freeCheck: 'Test gratuit', myReports: 'Mes rapports' },
+  es: { howItWorks: 'Funciones', pricing: 'Precios', faq: 'FAQ', blog: 'Blog', freeCheck: 'Prueba gratis', myReports: 'Mis informes' },
+  pt: { howItWorks: 'Funcionalidades', pricing: 'Preços', faq: 'FAQ', blog: 'Blog', freeCheck: 'Teste grátis', myReports: 'Meus relatórios' },
 };
 
 export default function Header() {
