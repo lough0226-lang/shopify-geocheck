@@ -1,7 +1,44 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useLang, PAGE_CONTENT } from '../lib/i18n';
+
+function HeroInputForm({ lang, placeholder, btnText }) {
+  const router = useRouter();
+  const [url, setUrl] = useState('');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!url.trim()) return;
+    try {
+      new URL(url);
+    } catch {
+      return;
+    }
+    router.push('/check?url=' + encodeURIComponent(url.trim()));
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+      <input
+        type="url"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder={placeholder}
+        className="flex-1 px-5 py-3.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:border-transparent text-sm"
+        required
+      />
+      <button
+        type="submit"
+        className="px-8 py-3.5 bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-sm whitespace-nowrap"
+      >
+        {btnText}
+      </button>
+    </form>
+  );
+}
 
 export default function HeroSection() {
   const lang = useLang();
