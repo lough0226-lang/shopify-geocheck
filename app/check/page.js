@@ -208,6 +208,22 @@ export default function CheckPage() {
   var [lang, setLang] = useState('en');
   var analysisIdRef = useRef(0);
 
+  // Pre-fill URL from query parameter (e.g., from hero input)
+  useEffect(function() {
+    if (typeof window !== 'undefined') {
+      var params = new URLSearchParams(window.location.search);
+      var prefillUrl = params.get('url');
+      if (prefillUrl) {
+        setUrl(prefillUrl);
+        params.delete('url');
+        var newUrl = window.location.pathname;
+        var remaining = params.toString();
+        if (remaining) newUrl += '?' + remaining;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, []);
+
   useEffect(function() {
     var initialLang = detectLanguage();
     setLang(initialLang);

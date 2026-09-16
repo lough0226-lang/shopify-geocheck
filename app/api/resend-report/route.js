@@ -73,6 +73,14 @@ export async function POST(request) {
         &bull; Strategic recommendations
       </p>
     </div>
+    <div style="text-align:center;margin:20px 0;">
+      <a href="${siteUrl}/check" style="display:inline-block;background:#1e3a5f;color:#fff;font-weight:600;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:14px;">
+        🔍 Test Another Product — Free
+      </a>
+      <p style="color:#6b7280;font-size:12px;margin-top:8px;">
+        Keep improving your store's AI search visibility
+      </p>
+    </div>
     <p style="color:#6b7280;font-size:13px;text-align:center;">
       Questions? Reply to this email or contact hello@mygeocheck.com
     </p>

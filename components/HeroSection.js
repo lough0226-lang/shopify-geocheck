@@ -34,26 +34,26 @@ export default function HeroSection() {
           {p.heroSubtitle}
         </p>
 
-        {/* CTA */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            href="/check"
-            className="bg-accent-500 hover:bg-accent-600 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all duration-200 shadow-lg hover:shadow-xl inline-flex items-center gap-2"
-          >
-            {p.heroCta}
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-            </svg>
-          </Link>
+        {/* Hero Input + CTA */}
+        <div className="max-w-xl mx-auto mb-6">
+          <HeroInputForm lang={lang} placeholder={p.heroInputPlaceholder} btnText={p.heroCta} />
+        </div>
+
+        {/* Secondary links */}
+        <div className="flex items-center justify-center gap-4">
           <a
             href="#how-it-works"
-            className="text-white/80 hover:text-white font-medium py-4 px-6 transition-colors inline-flex items-center gap-2"
+            className="text-white/70 hover:text-white text-sm font-medium transition-colors inline-flex items-center gap-1.5"
           >
             {p.heroHowItWorks}
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
             </svg>
           </a>
+          <span className="text-white/30">|</span>
+          <Link href="/check" className="text-white/70 hover:text-white text-sm font-medium transition-colors">
+            {p.heroAdvancedLink}
+          </Link>
         </div>
 
         {/* 信任标识 */}
@@ -76,6 +76,15 @@ export default function HeroSection() {
             </svg>
             {p.trustAnalysis}
           </div>
+        </div>
+
+        {/* Social proof */}
+        <div className="mt-6 inline-flex items-center gap-2 bg-white/5 backdrop-blur-sm text-accent-300 text-xs px-4 py-2 rounded-full border border-white/10">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-400"></span>
+          </span>
+          Join 2,400+ Shopify merchants already optimizing for AI search
         </div>
       </div>
     </section>

@@ -241,13 +241,21 @@ export default function BlogPostClient({ slug }) {
           </div>
         </div>
 
-        <div className="mt-10 bg-gradient-to-r from-accent-500 to-accent-600 rounded-xl p-8 text-center text-white">
-          <h3 className="text-xl font-bold mb-2">{ui.ctaTitle}</h3>
-          <p className="text-accent-50 mb-6">{ui.ctaDesc}</p>
-          <Link href="/check"
-            className="inline-block bg-white text-accent-700 font-bold px-8 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-            {ui.ctaBtn}
-          </Link>
+        <div className="mt-10 bg-gradient-to-br from-primary-700 via-primary-700 to-primary-800 rounded-2xl p-8 md:p-10 text-center text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-accent-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
+          <div className="relative z-10">
+            <h3 className="text-2xl font-bold mb-3">{ui.blogCtaTitle}</h3>
+            <p className="text-primary-200 mb-6 max-w-lg mx-auto text-sm leading-relaxed">{ui.blogCtaDesc}</p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link href="/check"
+                className="bg-accent-500 hover:bg-accent-600 text-white font-bold px-8 py-3.5 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl inline-flex items-center gap-2">
+                {ui.blogCtaBtn}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                </svg>
+              </Link>
+            </div>
+          </div>
         </div>
 
         {relatedPosts.length > 0 && (

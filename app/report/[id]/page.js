@@ -369,14 +369,20 @@ export default function ReportPage() {
         )}
 
         {/* Bottom CTA */}
-        <div style={{ textAlign: 'center', padding: '32px 0' }}>
-          <p style={{ color: '#6b7280', marginBottom: 16 }}>Want to check another product?</p>
+        <div style={{ background: 'linear-gradient(135deg, #1e3a5f, #2563eb)', borderRadius: 16, padding: '40px 32px', textAlign: 'center', marginBottom: 32 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 8, marginTop: 0 }}>
+            🚀 Test Your Next Product
+          </h2>
+          <p style={{ color: '#8bb5db', fontSize: 15, marginBottom: 24, maxWidth: 400, marginLeft: 'auto', marginRight: 'auto' }}>
+            Keep optimizing — check another product and improve your store's AI search visibility.
+          </p>
           <a href="/check" style={{
-            display: 'inline-block', border: '2px solid #1e3a5f', color: '#1e3a5f',
-            fontWeight: 600, padding: '12px 32px', borderRadius: 8,
+            display: 'inline-block', background: '#10b981', color: '#fff',
+            fontWeight: 700, padding: '14px 40px', borderRadius: 8,
             textDecoration: 'none', fontSize: 16,
+            boxShadow: '0 4px 6px -1px rgba(16,185,129,0.3)',
           }}>
-            Analyze Another Product
+            Analyze Another Product →
           </a>
         </div>
       </div>
