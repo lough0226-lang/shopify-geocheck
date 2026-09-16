@@ -14,12 +14,9 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <div className="bg-accent-500 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm">
-                G
-              </div>
-              <span className="font-bold text-lg">
-                GEO<span className="text-accent-400">Check</span>
-              </span>
+              <Link href="/" className="flex items-center">
+                <img src="/logo.png" srcSet="/logo.png 1x, /logo@2x.png 2x" alt="mygeocheck" className="h-[40px]" />
+              </Link>
             </div>
             <p className="text-primary-300 text-sm max-w-sm mb-4">{p.footerBrandDesc}</p>
           </div>
