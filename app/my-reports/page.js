@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Header from '../../components/Header';
+
 
 // 多语言文案
 const TEXT = {
@@ -171,10 +171,9 @@ export default function MyReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="bg-gray-50 py-8">
 
-      <main className="max-w-2xl mx-auto px-4 py-12">
+      <div className="max-w-2xl mx-auto px-4">
         {/* 标题 */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{t.title}</h1>
@@ -330,7 +329,7 @@ export default function MyReportsPage() {
             ← {t.backHome}
           </a>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
