@@ -35,4 +35,5 @@ next-env.d.ts
 
 # Local analytics/subscription data (Zeabur persistent volume)
 /data/
-.npm-install.log
+.npm-install.logreports/
+node_modules/
