@@ -9,10 +9,17 @@ const fs = require('fs');
 const path = require('path');
 
 // ========== 配置 ==========
-const GA_KEY_JSON = process.env.GA_SERVICE_ACCOUNT_KEY; // Zeabur 环境变量，JSON 字符串
+const GA_KEY_B64 = process.env.GAKEY; // Zeabur 环境变量，Base64 编码的 JSON
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const REPORT_EMAIL = 'lough0226@gmail.com'; // 发送到的邮箱
 const REPORT_DIR = path.join(__dirname, 'reports');
+
+// 解码 GA 服务账号密钥（Base64 → JSON）
+function getGAKeyJSON() {
+  if (!GA_KEY_B64) throw new Error('GAKEY 环境变量未设置');
+  const jsonStr = Buffer.from(GA_KEY_B64, 'base64').toString('utf-8');
+  return JSON.parse(jsonStr);
+}
 
 // 确保报告目录存在
 if (!fs.existsSync(REPORT_DIR)) fs.mkdirSync(REPORT_DIR, { recursive: true });
@@ -29,7 +36,7 @@ function getDBPool() {
 // ========== Google Analytics API ==========
 function getAccessToken() {
   return new Promise((resolve, reject) => {
-    const key = JSON.parse(GA_KEY_JSON);
+    const key = getGAKeyJSON();
     const now = Math.floor(Date.now() / 1000);
     const header = JSON.stringify({ alg: 'RS256', typ: 'JWT' });
     const claim = JSON.stringify({
