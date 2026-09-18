@@ -239,12 +239,12 @@ export default function CheckPage() {
   var t = translations[lang];
 
   var loadingMessages = {
-    en: ['Fetching your product page...', 'Analyzing product title and metadata...', 'Checking structured data markup...', 'Evaluating AI search readiness...', 'Comparing against GEO best practices...', 'Generating your visibility score...'],
+    en: ['Fetching your product page...', 'Analyzing product title and metadata...', 'Checking structured data markup...', 'Simulating AI search queries...', 'Identifying competitors in your category...', 'Generating your visibility score...'],
     de: ['Produktseite wird abgerufen...', 'Produkttitel und Metadaten werden analysiert...', 'Strukturierte Daten werden geprüft...', 'KI-Suchbereitschaft wird bewertet...', 'Vergleich mit GEO-Best-Practices...', 'Sichtbarkeits-Score wird erstellt...'],
     fr: ['Récupération de la page produit...', 'Analyse du titre et des métadonnées...', 'Vérification du balisage structuré...', 'Évaluation de la préparation IA...', 'Comparaison avec les meilleures pratiques...', 'Génération de votre score...'],
     es: ['Obteniendo tu página de producto...', 'Analizando título y metadatos...', 'Verificando datos estructurados...', 'Evaluando preparación para búsqueda IA...', 'Comparando con mejores prácticas GEO...', 'Generando tu puntuación...'],
     pt: ['Buscando sua página de produto...', 'Analisando título e metadados...', 'Verificando dados estruturados...', 'Avaliando prontidão para busca IA...', 'Comparando com melhores práticas GEO...', 'Gerando sua pontuação...'],
-    zh: ['正在获取产品页面...', '正在分析产品标题和元数据...', '正在检查结构化数据标记...', '正在评估 AI 搜索就绪度...', '正在对比 GEO 最佳实践...', '正在生成可见度评分...'],
+    zh: ['正在获取产品页面...', '正在分析产品标题和元数据...', '正在检查结构化数据标记...', '正在模拟 AI 搜索查询...', '正在识别同类竞品...', '正在生成可见度评分...'],
   };
 
   function handleAnalyze(e) {
@@ -331,9 +331,18 @@ export default function CheckPage() {
             score: data.score || 0,
             product_name: data.product_name || '',
             store_name: data.store_name || '',
-            free_issues: Array.isArray(data.free_issues) ? data.free_issues : [],
-            full_report: data.full_report || null,
-            total_issues_count: data.total_issues_count || 0,
+            verdict: data.verdict || '',
+            industry_benchmark: data.industry_benchmark || null,
+            buyer_queries: Array.isArray(data.buyer_queries) ? data.buyer_queries : [],
+            query_match_scores: Array.isArray(data.query_match_scores) ? data.query_match_scores : [],
+            competitors: Array.isArray(data.competitors) ? data.competitors : [],
+            diagnosis: Array.isArray(data.diagnosis) ? data.diagnosis : (Array.isArray(data.free_issues) ? data.free_issues : []),
+            paid_fixes_teasers: Array.isArray(data.paid_fixes_teasers) ? data.paid_fixes_teasers : [],
+            paid_value_prop: data.paid_value_prop || '',
+            unlocked: data.unlocked || false,
+            free_issues: Array.isArray(data.diagnosis || data.free_issues) ? (data.diagnosis || data.free_issues) : [],
+            full_report: null,
+            total_issues_count: (data.diagnosis || data.free_issues || []).length,
             stored_at: Date.now(),
           };
           localStorage.setItem('geo_report_' + data.report_id, JSON.stringify(fullReport));
