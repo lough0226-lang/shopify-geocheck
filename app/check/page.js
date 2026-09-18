@@ -447,11 +447,69 @@ export default function CheckPage() {
     });
   }
 
-  var freeIssues = (results && Array.isArray(results.free_issues)) ? results.free_issues : [];
+  // 优先使用新 freemium 结构（diagnosis），向后兼容旧结构（free_issues）
+  var diagnosis = (results && Array.isArray(results.diagnosis))
+    ? results.diagnosis
+    : ((results && Array.isArray(results.free_issues)) ? results.free_issues : []);
+  var freeIssues = diagnosis;
   var score = (results && typeof results.score === 'number') ? results.score : 0;
   var productName = (results && results.product_name) ? results.product_name : 'Your Product';
   var storeName = (results && results.store_name) ? results.store_name : '';
-  var totalIssues = (results && results.total_issues_count) ? results.total_issues_count : freeIssues.length;
+  var totalIssues = (results && results.total_issues_count) ? results.total_issues_count : diagnosis.length;
+
+  // 新增 freemium 数据
+  var verdict = (results && results.verdict) ? results.verdict : '';
+  var industryBenchmark = (results && results.industry_benchmark) ? results.industry_benchmark : {};
+  var buyerQueries = (results && Array.isArray(results.buyer_queries)) ? results.buyer_queries : [];
+  var queryMatchScores = (results && Array.isArray(results.query_match_scores)) ? results.query_match_scores : [];
+  var competitors = (results && Array.isArray(results.competitors)) ? results.competitors : [];
+  var paidFixesTeasers = (results && Array.isArray(results.paid_fixes_teasers)) ? results.paid_fixes_teasers : [];
+  var isUnlocked = results && results.unlocked === true;
+
+  // Verdict 样式
+  var verdictIcon = verdict.indexOf('unlikely') !== -1 ? '❌'
+    : verdict.indexOf('likely to recommend') !== -1 ? '✅' : '⚠️';
+  var verdictBg = verdict.indexOf('unlikely') !== -1 ? '#fef2f2'
+    : verdict.indexOf('likely to recommend') !== -1 ? '#f0fdf4' : '#fffbeb';
+  var verdictBorder = verdict.indexOf('unlikely') !== -1 ? '#fecaca'
+    : verdict.indexOf('likely to recommend') !== -1 ? '#bbf7d0' : '#fde68a';
+  var verdictColor = verdict.indexOf('unlikely') !== -1 ? '#991b1b'
+    : verdict.indexOf('likely to recommend') !== -1 ? '#166534' : '#92400e';
+
+  // 翻译 helper（带默认值兜底）
+  function tk(key, defaultVal) {
+    return (t && t[key]) ? t[key] : defaultVal;
+  }
+
+  function matchIcon(match) {
+    if (match === 'high') return '✅';
+    if (match === 'medium') return '⚠️';
+    if (match === 'low') return '⚠️';
+    return '❌';
+  }
+  function matchBorder(match) {
+    if (match === 'high') return '#bbf7d0';
+    if (match === 'medium') return '#fde68a';
+    if (match === 'low') return '#fde68a';
+    return '#fecaca';
+  }
+  function matchBg(match) {
+    if (match === 'high') return '#f0fdf4';
+    if (match === 'medium') return '#fffbeb';
+    if (match === 'low') return '#fffbeb';
+    return '#fef2f2';
+  }
+  function matchBadge(match) {
+    if (match === 'high') return { bg: '#dcfce7', color: '#166534' };
+    if (match === 'medium' || match === 'low') return { bg: '#fef3c7', color: '#92400e' };
+    return { bg: '#fee2e2', color: '#991b1b' };
+  }
+  function matchLabel(match) {
+    if (match === 'high') return tk('matchHigh', 'Strong match');
+    if (match === 'medium') return tk('matchMedium', 'Partial match');
+    if (match === 'low') return tk('matchLow', 'Weak match');
+    return tk('matchFail', 'Not matching');
+  }
 
   var scoreColor = score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444';
   var scoreTextColor = score >= 70 ? '#16a34a' : score >= 40 ? '#d97706' : '#dc2626';
@@ -575,8 +633,21 @@ export default function CheckPage() {
         <ErrorBoundary>
           <section style={{ paddingBottom: 48 }}>
             <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px' }}>
-              {/* Score */}
-              <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', padding: 32, marginBottom: 32 }}>
+              {/* 1. Verdict 判定卡片 */}
+              {verdict && (
+                <div style={{
+                  background: verdictBg, border: '2px solid ' + verdictBorder,
+                  borderRadius: 16, padding: '28px 32px', marginBottom: 24, textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>{verdictIcon}</div>
+                  <h2 style={{ fontSize: 22, fontWeight: 700, color: verdictColor, margin: 0, lineHeight: 1.4 }}>
+                    {verdict}
+                  </h2>
+                </div>
+              )}
+
+              {/* 2. Score + 行业对比 */}
+              <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', padding: 32, marginBottom: 24 }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 32 }}>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{
@@ -586,30 +657,172 @@ export default function CheckPage() {
                       fontSize: 36, fontWeight: 700,
                       color: scoreTextColor,
                     }}>
-                      {score}
+                      {score}<span style={{ fontSize: 18, color: '#9ca3af' }}>/100</span>
                     </div>
                     <p style={{ fontSize: 14, color: '#6b7280', marginTop: 8 }}>{t.scoreLabel}</p>
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
                     <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 4, marginTop: 0 }}>{productName}</h2>
-                    {storeName && <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 8, marginTop: 0 }}>{storeName}</p>}
-                    <p style={{ color: '#4b5563', margin: 0 }}>{scoreMessage}</p>
+                    {storeName && <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 10, marginTop: 0 }}>{storeName}</p>}
+                    <p style={{ color: '#4b5563', margin: '0 0 12px 0' }}>{scoreMessage}</p>
+                    {industryBenchmark && industryBenchmark.percentile != null && (
+                      <div style={{ background: '#f0f9ff', borderRadius: 12, padding: 16, border: '1px solid #bae6fd' }}>
+                        <p style={{ fontSize: 15, color: '#0369a1', fontWeight: 600, margin: 0 }}>
+                          {'📊 ' + tk('industryBenchmark', 'You scored better than {percentile}% of similar stores').replace('{percentile}', industryBenchmark.percentile)}
+                        </p>
+                        {industryBenchmark.message && (
+                          <p style={{ fontSize: 13, color: '#475569', margin: '6px 0 0 0' }}>{industryBenchmark.message}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Free Issues */}
-              {freeIssues.length > 0 && (
-                <div style={{ marginBottom: 32 }}>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 16 }}>
-                    {t.topIssues}
+              {/* 3. 模拟买家搜索匹配 */}
+              {buyerQueries.length > 0 && (
+                <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
+                    {'🔎 ' + tk('buyerQueriesTitle', 'How buyers search for products like yours')}
+                  </h2>
+                  <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>
+                    {tk('buyerQueriesSubtitle', 'Real questions buyers ask AI assistants. Here is how your page matches.')}
+                  </p>
+                  <div style={{ display: 'grid', gap: 12 }}>
+                    {buyerQueries.map(function(query, i) {
+                      var matchData = queryMatchScores[i] || {};
+                      var match = matchData.match || 'low';
+                      var badge = matchBadge(match);
+                      return (
+                        <div key={i} style={{
+                          display: 'flex', alignItems: 'flex-start', gap: 12,
+                          background: matchBg(match), borderRadius: 10, padding: '14px 16px',
+                          border: '1px solid ' + matchBorder(match),
+                        }}>
+                          <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{matchIcon(match)}</span>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: 14, fontWeight: 500, color: '#1f2937', margin: 0, fontFamily: 'monospace' }}>
+                              "{query}"
+                            </p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                              <span style={{
+                                fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999,
+                                background: badge.bg, color: badge.color,
+                              }}>
+                                {matchLabel(match)}
+                              </span>
+                              {matchData.reason && (
+                                <span style={{ fontSize: 12, color: '#6b7280' }}>{matchData.reason}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 4. 竞品对比（免费版模糊） */}
+              {competitors.length > 0 && (
+                <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
+                    {'🏆 ' + tk('competitorTitle', "Who's winning these searches")}
+                  </h2>
+                  <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>
+                    {tk('competitorSubtitle', 'Top competitors appearing in AI search results for your product type.')}
+                  </p>
+                  <div style={{ display: 'grid', gap: 12 }}>
+                    {competitors.map(function(comp, i) {
+                      var isBlurred = !isUnlocked && (comp.name === 'A well-known brand in this category' || comp.domain === 'competitor-store.com');
+                      return (
+                        <div key={i} style={{
+                          display: 'flex', alignItems: 'center', gap: 16,
+                          background: '#fafafa', borderRadius: 10, padding: '14px 16px',
+                          border: '1px solid #e5e7eb',
+                        }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{
+                                fontSize: 14, fontWeight: 600,
+                                color: isBlurred ? '#9ca3af' : '#1f2937',
+                                fontStyle: isBlurred ? 'italic' : 'normal',
+                              }}>
+                                {comp.name}
+                              </span>
+                              {isBlurred && <span style={{ fontSize: 16 }}>🔒</span>}
+                            </div>
+                            {isBlurred && (
+                              <p style={{ fontSize: 12, color: '#9ca3af', margin: '2px 0 0 0', fontStyle: 'italic' }}>
+                                {tk('competitorBlurred', 'A well-known brand in this category')}
+                              </p>
+                            )}
+                            {comp.why_they_win && (
+                              <p style={{ fontSize: 13, color: '#4b5563', margin: '6px 0 0 0', lineHeight: 1.5 }}>
+                                {comp.why_they_win}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 5. 诊断问题（免费版只给问题+影响，不给方案） */}
+              {diagnosis.length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8 }}>
+                    {'🔍 ' + tk('diagnosisTitle', 'Issues Found')}
                     <span style={{ fontSize: 14, fontWeight: 400, color: '#6b7280', marginLeft: 8 }}>
-                      ({t.showingOf} {freeIssues.length} {t.of} {totalIssues} {t.issues})
+                      ({t.showingOf} {diagnosis.length} {t.of} {totalIssues} {t.issues})
                     </span>
                   </h3>
+                  <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
+                    {tk('diagnosisSubtitle', 'The specific problems blocking your product from being recommended by AI.')}
+                  </p>
                   <div style={{ display: 'grid', gap: 16 }}>
-                    {freeIssues.map(function(issue, index) {
-                      return <IssueCard key={index} issue={issue} lang={lang} />;
+                    {diagnosis.map(function(issue, index) {
+                      var sev = issue.severity === 'high'
+                        ? { bg: '#fef2f2', border: '#fecaca', icon: '🔴', badgeBg: '#fee2e2', badgeText: '#b91c1c', label: t.highImpact }
+                        : issue.severity === 'low'
+                        ? { bg: '#eff6ff', border: '#bfdbfe', icon: '🔵', badgeBg: '#dbeafe', badgeText: '#1d4ed8', label: t.lowImpact }
+                        : { bg: '#fffbeb', border: '#fde68a', icon: '🟡', badgeBg: '#fef3c7', badgeText: '#b45309', label: t.mediumImpact };
+                      var teaser = paidFixesTeasers[index];
+                      return (
+                        <div key={index} style={{ background: sev.bg, border: '1px solid ' + sev.border, borderRadius: 12, padding: 20 }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 12 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                              <span style={{ fontSize: 18 }}>{sev.icon}</span>
+                              <h4 style={{ fontWeight: 600, color: '#111827', margin: 0, fontSize: 16 }}>{issue.category || 'Issue'}</h4>
+                            </div>
+                            <span style={{ background: sev.badgeBg, color: sev.badgeText, padding: '2px 10px', borderRadius: 999, fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>
+                              {sev.label}
+                            </span>
+                          </div>
+                          {issue.issue && <p style={{ color: '#374151', fontSize: 14, marginBottom: 8, lineHeight: 1.6, marginTop: 0 }}>{issue.issue}</p>}
+                          {issue.impact && (
+                            <div style={{ background: 'rgba(255,255,255,0.6)', borderRadius: 8, padding: 12, marginTop: 8 }}>
+                              <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4, fontWeight: 500 }}>{t.impactLabel}</p>
+                              <p style={{ fontSize: 14, color: '#4b5563', margin: 0 }}>{issue.impact}</p>
+                            </div>
+                          )}
+                          {/* 付费 teaser：免费版只露一句诱人的话，不露方案 */}
+                          {!isUnlocked && (
+                            <div style={{
+                              marginTop: 16, background: 'rgba(255,255,255,0.5)', borderRadius: 8,
+                              padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                              border: '1px dashed #d1d5db',
+                            }}>
+                              <span style={{ fontSize: 13, color: '#6b7280', fontStyle: 'italic' }}>
+                                {teaser && teaser.teaser ? teaser.teaser : tk('paidValueProp', 'Unlock the step-by-step fix')}
+                              </span>
+                              <span style={{ fontSize: 18, flexShrink: 0 }}>🔒</span>
+                            </div>
+                          )}
+                        </div>
+                      );
                     })}
                   </div>
                 </div>
