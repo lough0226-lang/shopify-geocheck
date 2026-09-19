@@ -271,6 +271,7 @@ export async function POST(request) {
 
     // 保存到数据库
     const reportId = crypto.randomUUID();
+    let saveResultDiag = 'not_attempted';
 
     try {
       await saveReport({
@@ -296,8 +297,10 @@ export async function POST(request) {
         industry_benchmark: analysisResult.industry_benchmark || null,
       });
       console.log('[DB] Report saved:', reportId);
+      saveResultDiag = 'ok';
     } catch (dbErr) {
       console.error('[DB] Failed to save report:', dbErr.message);
+      saveResultDiag = (dbErr.message || 'err').slice(0, 200);
     }
 
     // 订阅用户用量追踪
@@ -338,6 +341,11 @@ export async function POST(request) {
       unlocked: false,
       _fallback: analysisResult._fallback || false,
       _source: productData._source || 'unknown',
+      _diag: {
+        pg_conn: process.env.PG_CONN ? 'set' : 'MISSING',
+        db_url: process.env.DATABASE_URL ? 'set' : 'MISSING',
+        save: saveResultDiag,
+      },
     };
 
     // 如果用户有付费权限，返回完整数据
