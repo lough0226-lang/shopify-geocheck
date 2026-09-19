@@ -296,10 +296,15 @@ export async function POST(request) {
         industry_benchmark: analysisResult.industry_benchmark || null,
       });
       console.log('[DB] Report saved:', reportId);
+      try {
+        const mask = (s) => s ? s.replace(/:[^:@/]+@/, ':PASS@').slice(0, 70) : 'MISSING';
+        require('fs').appendFileSync('/tmp/dberr.log', `[${new Date().toISOString()}] SAVE_OK envDB=${mask(process.env.DATABASE_URL)} pgCs=${mask(process.env.POSTGRES_CONNECTION_STRING)} rid=${reportId}\n`);
+      } catch(e) {}
     } catch (dbErr) {
       console.error('[DB] Failed to save report:', dbErr.message);
       try {
-        require('fs').appendFileSync('/tmp/dberr.log', `[${new Date().toISOString()}] SAVE_FAIL envDB=${process.env.DATABASE_URL ? 'set' : 'MISSING'} pgCs=${process.env.POSTGRES_CONNECTION_STRING ? 'set' : 'MISSING'} code=${dbErr.code || ''} msg=${(dbErr.message || '').slice(0,250)} detail=${(dbErr.detail || '').slice(0,150)}\n`);
+        const mask = (s) => s ? s.replace(/:[^:@/]+@/, ':PASS@').slice(0, 70) : 'MISSING';
+        require('fs').appendFileSync('/tmp/dberr.log', `[${new Date().toISOString()}] SAVE_FAIL envDB=${mask(process.env.DATABASE_URL)} pgCs=${mask(process.env.POSTGRES_CONNECTION_STRING)} pgUri=${mask(process.env.POSTGRES_URI)} code=${dbErr.code || ''} msg=${(dbErr.message || '').slice(0,250)}\n`);
       } catch(e) {}
     }
 
