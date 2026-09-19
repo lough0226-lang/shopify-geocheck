@@ -206,9 +206,10 @@ export default function CheckPage() {
   var [results, setResults] = useState(null);
   var [loadingText, setLoadingText] = useState('');
   var [lang, setLang] = useState('en');
+  var [autoStart, setAutoStart] = useState(false);
   var analysisIdRef = useRef(0);
 
-  // Pre-fill URL from query parameter (e.g., from hero input)
+  // Pre-fill URL from query parameter (e.g., from hero input) and auto-start
   useEffect(function() {
     if (typeof window !== 'undefined') {
       var params = new URLSearchParams(window.location.search);
@@ -220,6 +221,8 @@ export default function CheckPage() {
         var remaining = params.toString();
         if (remaining) newUrl += '?' + remaining;
         window.history.replaceState({}, '', newUrl);
+        // 自动触发检测
+        setAutoStart(true);
       }
     }
   }, []);
@@ -235,6 +238,15 @@ export default function CheckPage() {
       window.removeEventListener('languagechange', onLangEvent);
     };
   }, []);
+
+  // Auto-start analysis when URL is pre-filled from hero input
+  useEffect(function() {
+    if (autoStart && url && !loading && !results) {
+      setAutoStart(false);
+      // 模拟表单提交事件
+      handleAnalyze({ preventDefault: function() {} });
+    }
+  }, [autoStart, url]);
 
   var t = translations[lang];
 
