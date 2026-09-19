@@ -44,13 +44,15 @@ function generateFallbackAnalysis(productData, url) {
     product_name: fallbackProductName,
     store_name: '',
     verdict: 'ChatGPT might recommend this product in some searches',
-    industry_benchmark: { percentile: 30, message: 'You scored better than 30% of similar stores' },
+    industry_benchmark: { percentile: 30, message: 'You scored better than 30% of similar stores', exposure_score: 0 },
     buyer_queries: [
       'best product in this category',
       'where to buy online',
       'product review and comparison',
       'affordable option for beginners',
       'top rated product this year',
+      'gift idea for this product type',
+      'is this worth the price',
     ],
     query_match_scores: [
       { query: 'best product in this category', match: 'low', reason: 'Analysis incomplete' },
@@ -58,6 +60,8 @@ function generateFallbackAnalysis(productData, url) {
       { query: 'product review and comparison', match: 'fail', reason: 'Analysis incomplete' },
       { query: 'affordable option for beginners', match: 'low', reason: 'Analysis incomplete' },
       { query: 'top rated product this year', match: 'fail', reason: 'Analysis incomplete' },
+      { query: 'gift idea for this product type', match: 'low', reason: 'Analysis incomplete' },
+      { query: 'is this worth the price', match: 'low', reason: 'Analysis incomplete' },
     ],
     competitors: [
       { name: 'Competitor A', domain: 'competitor-a.com', why_they_win: 'Better optimized content' },
