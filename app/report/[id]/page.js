@@ -169,6 +169,7 @@ export default function ReportPage() {
   var diagnosis = Array.isArray(report.diagnosis) ? report.diagnosis : (Array.isArray(report.free_issues) ? report.free_issues : []);
   var paidFixes = Array.isArray(report.paid_fixes) ? report.paid_fixes : [];
   var paidFixesTeasers = Array.isArray(report.paid_fixes_teasers) ? report.paid_fixes_teasers : [];
+  var queryFixes = Array.isArray(report.query_fixes) ? report.query_fixes : [];
   var overallRecs = report.overall_recommendations || '';
 
   var scoreColor = score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444';
@@ -345,6 +346,11 @@ export default function ReportPage() {
                   {industryBenchmark.message && (
                     <p style={{ fontSize: 13, color: '#475569', margin: '6px 0 0 0' }}>{industryBenchmark.message}</p>
                   )}
+                  {industryBenchmark.exposure_score != null && (
+                    <p style={{ fontSize: 14, color: '#0369a1', margin: '8px 0 0 0', fontWeight: 600 }}>
+                      {'🎯 AI Exposure Score: ' + industryBenchmark.exposure_score + '% — ' + tk('exposureDesc', 'Your page can be recommended by AI for {pct}% of real buyer queries').replace('{pct}', industryBenchmark.exposure_score)}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -501,6 +507,33 @@ export default function ReportPage() {
                         <span style={{ fontSize: 18 }}>{'\u{1F512}'}</span>
                       </div>
                     )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Query-Specific Fixes (unlocked only) */}
+        {isUnlocked && queryFixes.length > 0 && (
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
+              {'\u{1F3AF}'} {tk('queryFixesTitle', 'Query-Specific Fixes')}
+            </h2>
+            <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 20 }}>{tk('queryFixesDesc', 'Targeted improvements for each buyer query where your page underperforms')}</p>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {queryFixes.map(function(qf, i) {
+                return (
+                  <div key={i} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: 16 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#92400e', margin: '0 0 4px 0' }}>
+                      {tk('query', 'Query') + ' ' + (qf.query_index + 1) + ': ' + (qf.query || '')}
+                    </p>
+                    <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 8px 0' }}>
+                      {tk('match', 'Match')}: {qf.match || 'N/A'} — {qf.reason || ''}
+                    </p>
+                    <p style={{ fontSize: 14, color: '#374151', margin: 0, lineHeight: 1.6 }}>
+                      {'\u{1F4A1}'} {qf.fix || ''}
+                    </p>
                   </div>
                 );
               })}

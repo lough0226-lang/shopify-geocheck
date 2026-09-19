@@ -703,6 +703,11 @@ export default function CheckPage() {
                         {industryBenchmark.message && (
                           <p style={{ fontSize: 13, color: '#475569', margin: '6px 0 0 0' }}>{industryBenchmark.message}</p>
                         )}
+                        {industryBenchmark.exposure_score != null && (
+                          <p style={{ fontSize: 14, color: '#0369a1', margin: '8px 0 0 0', fontWeight: 600 }}>
+                            {'🎯 AI Exposure Score: ' + industryBenchmark.exposure_score + '% — ' + tk('exposureDesc', 'Your page can be recommended by AI for {pct}% of real buyer queries').replace('{pct}', industryBenchmark.exposure_score)}
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
