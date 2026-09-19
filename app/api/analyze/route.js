@@ -273,6 +273,10 @@ export async function POST(request) {
     const reportId = crypto.randomUUID();
 
     try {
+      require('fs').appendFileSync('/tmp/dberr.log', `[${new Date().toISOString()}] ENTER_SAVE rid=${reportId} fallback=${!!analysisResult._fallback}\n`);
+    } catch(e) {}
+
+    try {
       await saveReport({
         reportId,
         url,
