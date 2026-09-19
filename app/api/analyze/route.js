@@ -343,6 +343,8 @@ export async function POST(request) {
       _fallback: analysisResult._fallback || false,
       _source: productData._source || 'unknown',
       _savediag: saveDiag,
+      _envkeys: Object.keys(process.env).filter(k => /data|postg|pg|db/i.test(k)),
+      _nodeenv: process.env.NODE_ENV || 'unset',
     };
 
     // 如果用户有付费权限，返回完整数据
