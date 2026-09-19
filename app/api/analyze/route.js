@@ -257,11 +257,16 @@ export async function POST(request) {
     let aiErrorInfo = null;
     try {
       analysisResult = await analyzeProduct(productData, url, lang || 'en');
-      await updateApiUsage();
     } catch (aiError) {
       console.error('AI analysis failed after all retries:', aiError.message);
       aiErrorInfo = aiError.message;
       analysisResult = generateFallbackAnalysis(productData, url);
+    }
+    // API 用量统计独立执行，失败不影响分析结果，也不污染 AI 错误信息
+    try {
+      await updateApiUsage();
+    } catch (usageErr) {
+      console.warn('[Quota] updateApiUsage failed (non-fatal):', usageErr.message);
     }
 
     // 保存到数据库
