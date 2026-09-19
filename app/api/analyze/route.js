@@ -344,6 +344,7 @@ export async function POST(request) {
       _source: productData._source || 'unknown',
       _savediag: saveDiag,
       _envkeys: Object.keys(process.env).filter(k => /data|postg|pg|db/i.test(k)),
+      _allkeys: Object.keys(process.env).sort(),
       _nodeenv: process.env.NODE_ENV || 'unset',
     };
 
