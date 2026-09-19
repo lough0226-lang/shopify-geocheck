@@ -342,11 +342,7 @@ export async function POST(request) {
       _fallback: analysisResult._fallback || false,
       _source: productData._source || 'unknown',
       _diag: {
-        dburi: process.env.DBURI ? 'set' : 'MISSING',
-        pg_conn: process.env.PG_CONN ? 'set' : 'MISSING',
-        db_url: process.env.DATABASE_URL ? 'set' : 'MISSING',
-        password: process.env.PASSWORD ? 'set' : 'MISSING',
-        custom_vars: Object.keys(process.env).filter(k => !k.startsWith('VERCEL') && !k.startsWith('NEXT') && !k.startsWith('AWS') && !['PATH','PWD','SHLVL','LANG','TZ','LD_LIBRARY_PATH','LD_PRELOAD','NODE_PATH','OPENSSL_CONF','NODE_ENV','NOW_REGION','NX_DAEMON','TURBO_CACHE','TURBO_DOWNLOAD_LOCAL_ENABLED','TURBO_PLATFORM_ENV','TURBO_REMOTE_ONLY','TURBO_RUN_SUMMARY','PORT','WEB_PORT'].includes(k)).sort(),
+        proc_db_url: (() => { try { const b = require('fs').readFileSync('/proc/self/environ','utf8'); return b.split('\0').some(e => e.startsWith('DATABASE_URL=')) ? 'set' : 'MISSING'; } catch(e){ return 'no-proc'; } })(),
         save: saveResultDiag,
       },
     };
