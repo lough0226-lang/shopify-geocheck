@@ -272,10 +272,28 @@ export default function CheckPage() {
     if (!inputUrl.startsWith('http://') && !inputUrl.startsWith('https://')) {
       inputUrl = 'https://' + inputUrl;
     }
+    var parsedInput;
     try {
-      new URL(inputUrl);
+      parsedInput = new URL(inputUrl);
     } catch (err) {
       setError(t.errorInvalidUrl);
+      return;
+    }
+
+    // 前置校验：必须是 /products/<产品名> 的产品详情页，目录页/首页/政策页直接拦截
+    if (!/\/products\/[^/?#]+/.test(parsedInput.pathname)) {
+      setError(t.errorNotProductPage || 'This link is not a specific product page. Please paste a product link containing /products/.');
+      setErrorInfo({
+        type: 'NOT_PRODUCT_PAGE',
+        title: t.errorNotProductTitle || 'Please use a product link',
+        suggestions: (t.errorNotProductSuggestions && t.errorNotProductSuggestions.length)
+          ? t.errorNotProductSuggestions
+          : [
+              'Open the product you want to check in your store',
+              'Copy the link from your browser address bar — it should contain /products/',
+              'Example: https://yourstore.com/products/your-product-name',
+            ],
+      });
       return;
     }
 

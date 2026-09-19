@@ -2,7 +2,7 @@
 // v22: 诊断+药方分离 — 免费版只给诊断（痛点），付费版给药方（解决方案）
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { scrapeProductPage, isValidShopifyUrl } from '../../../lib/scraper';
+import { scrapeProductPage, isValidShopifyUrl, looksLikeProductPage, nonProductPageError } from '../../../lib/scraper';
 import { analyzeProduct } from '../../../lib/openai';
 import { recordEvent, domainFromUrl } from '../../../lib/analytics';
 import { saveReport, getReport, unlockReport, updateApiUsage, getApiUsage, initDatabase, getActiveSubscription, getSubscriptionUsage, incrementSubscriptionUsage } from '../../../lib/db';
@@ -153,9 +153,15 @@ export async function POST(request) {
     });
 
     if (!isValidShopifyUrl(url)) {
+      const np = nonProductPageError();
       return NextResponse.json(
-        { error: 'Please enter a valid Shopify product URL (must be a myshopify.com store or contain /products/ path)' },
-        { status: 400 }
+        {
+          error: np.message,
+          error_type: 'NOT_PRODUCT_PAGE',
+          error_title: np.errorTitle,
+          suggestions: np.suggestions,
+        },
+        { status: 422 }
       );
     }
 
@@ -202,6 +208,22 @@ export async function POST(request) {
           error_title: scrapeError.errorTitle || 'Unable to Access Page',
           suggestions: scrapeError.suggestions || [],
           debug: process.env.NODE_ENV === 'development' ? scrapeError.allErrors?.join(' | ') : undefined,
+        },
+        { status: 422 }
+      );
+    }
+
+    // 抓取结果可信度校验：确认抓到的确实是产品详情页，而非目录页/政策页
+    if (!looksLikeProductPage(productData, url)) {
+      console.warn('[Scrape] Content is not a product page:', url, JSON.stringify(productData?.title || ''));
+      recordEvent('analysis_not_product', { domain: domainFromUrl(url), lang: lang || 'en' });
+      const np = nonProductPageError();
+      return NextResponse.json(
+        {
+          error: np.message,
+          error_type: np.errorType,
+          error_title: np.errorTitle,
+          suggestions: np.suggestions,
         },
         { status: 422 }
       );
