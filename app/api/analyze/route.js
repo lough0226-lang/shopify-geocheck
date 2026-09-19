@@ -298,6 +298,9 @@ export async function POST(request) {
       console.log('[DB] Report saved:', reportId);
     } catch (dbErr) {
       console.error('[DB] Failed to save report:', dbErr.message);
+      try {
+        require('fs').appendFileSync('/tmp/dberr.log', `[${new Date().toISOString()}] SAVE_FAIL envDB=${process.env.DATABASE_URL ? 'set' : 'MISSING'} pgCs=${process.env.POSTGRES_CONNECTION_STRING ? 'set' : 'MISSING'} code=${dbErr.code || ''} msg=${(dbErr.message || '').slice(0,250)} detail=${(dbErr.detail || '').slice(0,150)}\n`);
+      } catch(e) {}
     }
 
     // 订阅用户用量追踪
