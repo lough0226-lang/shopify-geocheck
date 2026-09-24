@@ -26,6 +26,9 @@ export default function ReportPage() {
   var [emailMsg, setEmailMsg] = useState('');
   var [lang, setLang] = useState('en');
   var [t, setT] = useState(null);
+  var [rechecking, setRechecking] = useState(false);
+  var [recheckResult, setRecheckResult] = useState(null);
+  var [recheckError, setRecheckError] = useState('');
 
   useEffect(function() {
     // Detect language
@@ -261,6 +264,40 @@ export default function ReportPage() {
     return (t && t[key]) || fallback;
   }
 
+  function handleRecheck() {
+    if (!reportId || rechecking) return;
+    setRechecking(true);
+    setRecheckError('');
+    fetch('/api/recheck', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ report_id: reportId, email: report.email || undefined, lang: lang }),
+    })
+      .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+      .then(function(res) {
+        setRechecking(false);
+        if (res.ok) {
+          setRecheckResult(res.data);
+        } else {
+          setRecheckError(res.data.error || 'Recheck failed');
+        }
+      })
+      .catch(function() {
+        setRechecking(false);
+        setRecheckError('Network error. Please try again.');
+      });
+  }
+
+  function matchRank(m) {
+    return { high: 4, medium: 3, low: 2, fail: 1 }[m] || 0;
+  }
+  function deltaArrow(before, after) {
+    var d = matchRank(after) - matchRank(before);
+    if (d > 0) return { symbol: '\u2191', color: '#16a34a' };
+    if (d < 0) return { symbol: '\u2193', color: '#dc2626' };
+    return { symbol: '=', color: '#9ca3af' };
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
       {/* Header */}
@@ -398,7 +435,104 @@ export default function ReportPage() {
           </div>
         )}
 
-        {/* 4. Competitor Comparison */}
+        {/* 3.5 Recheck — unlocked only */}
+        {isUnlocked && (
+          <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #f3f4f6', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', padding: 32, marginBottom: 24 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
+              {'\u{1F501}'} Follow-up Recheck
+            </h2>
+            <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 20, marginTop: 0 }}>
+              Re-run the SAME buyer questions against the current page to see if your changes improved AI visibility. Your original 7 queries are locked so results stay comparable.
+            </p>
+
+            {!recheckResult && (
+              <button
+                onClick={handleRecheck}
+                disabled={rechecking}
+                style={{
+                  background: rechecking ? '#9ca3af' : '#1e3a5f', color: '#fff', fontWeight: 600,
+                  padding: '12px 28px', borderRadius: 8, border: 'none',
+                  fontSize: 15, cursor: rechecking ? 'wait' : 'pointer',
+                }}
+              >
+                {rechecking ? '\u23F3 Re-running your locked queries...' : '\u{1F501} Run Free Recheck Now'}
+              </button>
+            )}
+
+            {recheckError && (
+              <p style={{ color: '#dc2626', fontSize: 14, marginTop: 12, marginBottom: 0 }}>{recheckError}</p>
+            )}
+
+            {recheckResult && (
+              <div>
+                {/* Score summary */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginBottom: 24 }}>
+                  <div style={{ flex: 1, minWidth: 160, background: '#f9fafb', borderRadius: 12, padding: 20, textAlign: 'center' }}>
+                    <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 6px 0' }}>Overall Score</p>
+                    <p style={{ fontSize: 28, fontWeight: 700, color: '#1f2937', margin: 0 }}>
+                      {recheckResult.before.score} <span style={{ color: '#9ca3af', fontSize: 18 }}>→</span> {recheckResult.after.score}
+                    </p>
+                    {(() => {
+                      var sd = recheckResult.after.score - recheckResult.before.score;
+                      return (
+                        <span style={{ fontSize: 13, fontWeight: 600, color: sd > 0 ? '#16a34a' : sd < 0 ? '#dc2626' : '#9ca3af' }}>
+                          {sd > 0 ? '+' + sd : sd} points
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 160, background: '#f0fdf4', borderRadius: 12, padding: 20, textAlign: 'center', border: '1px solid #bbf7d0' }}>
+                    <p style={{ fontSize: 12, color: '#166534', margin: '0 0 6px 0' }}>{'\u{1F3AF}'} AI Exposure Score</p>
+                    <p style={{ fontSize: 28, fontWeight: 700, color: '#166534', margin: 0 }}>
+                      {(recheckResult.before.exposure_score ?? '—') + '%'} <span style={{ color: '#86efac', fontSize: 18 }}>→</span> {recheckResult.after.exposure_score}%
+                    </p>
+                    {(() => {
+                      if (recheckResult.before.exposure_score == null) return null;
+                      var ed = recheckResult.after.exposure_score - recheckResult.before.exposure_score;
+                      return (
+                        <span style={{ fontSize: 13, fontWeight: 600, color: ed > 0 ? '#16a34a' : ed < 0 ? '#dc2626' : '#9ca3af' }}>
+                          {ed > 0 ? '+' + ed : ed} points
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Per-query before → after */}
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {recheckResult.comparison.map(function(c, i) {
+                    var d = deltaArrow(c.before, c.after);
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fafafa', borderRadius: 10, padding: '12px 16px', border: '1px solid #eef2f7' }}>
+                        <span style={{ fontSize: 12, color: '#9ca3af', width: 18 }}>{i + 1}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 13, fontWeight: 500, color: '#1f2937', margin: 0, fontFamily: 'monospace' }}>"{c.query}"</p>
+                          {c.reason && <p style={{ fontSize: 12, color: '#6b7280', margin: '4px 0 0 0' }}>{c.reason}</p>}
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                          {c.before || '—'}
+                        </span>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: d.color, width: 16, textAlign: 'center' }}>{d.symbol}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap', color: c.after === 'high' ? '#16a34a' : c.after === 'fail' ? '#dc2626' : '#92400e' }}>
+                          {c.after || '—'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={handleRecheck}
+                  style={{ marginTop: 20, background: 'transparent', color: '#1e3a5f', fontWeight: 600, padding: '8px 0', border: 'none', fontSize: 14, cursor: 'pointer' }}
+                >
+                  Re-run again
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+
         {competitors.length > 0 && (
           <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 20, marginTop: 0 }}>

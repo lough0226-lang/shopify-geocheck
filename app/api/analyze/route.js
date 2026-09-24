@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { scrapeProductPage, isValidShopifyUrl, looksLikeProductPage, nonProductPageError } from '../../../lib/scraper';
 import { analyzeProduct } from '../../../lib/openai';
 import { recordEvent, domainFromUrl } from '../../../lib/analytics';
-import { saveReport, getReport, unlockReport, updateApiUsage, getApiUsage, initDatabase, getActiveSubscription, getSubscriptionUsage, incrementSubscriptionUsage } from '../../../lib/db';
+import { saveReport, getReport, unlockReport, updateApiUsage, getApiUsage, initDatabase, getActiveSubscription, getSubscriptionUsage, incrementSubscriptionUsage, isFoundingCustomer, enrollFoundingCustomer, countFoundingCustomers } from '../../../lib/db';
 
 // 强制使用 Node.js 运行时（非 Edge Runtime）
 export const runtime = 'nodejs';
@@ -120,13 +120,18 @@ function generateTeasers(paidFixes) {
 async function checkPaidAccess(report, customerEmail) {
   // 已解锁的报告
   if (report && report.unlocked) return true;
-  // 有活跃订阅的用户
+  // 有活跃订阅的用户 / 创始用户
   if (customerEmail) {
     try {
       const sub = await getActiveSubscription(customerEmail);
       if (sub) return true;
     } catch (e) {
       console.warn('[PaidAccess] Subscription check failed:', e.message);
+    }
+    try {
+      if (await isFoundingCustomer(customerEmail)) return true;
+    } catch (e) {
+      console.warn('[PaidAccess] Founding check failed:', e.message);
     }
   }
   return false;
@@ -140,7 +145,7 @@ export async function POST(request) {
   try {
     await ensureDbReady();
 
-    const { url, lang, email } = await request.json();
+    const { url, lang, email, join_founding, founding_agreements } = await request.json();
 
     if (!url || typeof url !== 'string') {
       return NextResponse.json(
@@ -344,6 +349,21 @@ export async function POST(request) {
       _source: productData._source || 'unknown',
     };
 
+    // 创始用户入组：带邮箱且主动申请，名额未满则登记（前30名）
+    let foundingInfo = null;
+    if (customerEmail && join_founding) {
+      try {
+        foundingInfo = await enrollFoundingCustomer(customerEmail, reportId, {
+          agreed_return: founding_agreements?.agreed_return ?? true,
+          agreed_feedback: founding_agreements?.agreed_feedback ?? true,
+          agreed_case: founding_agreements?.agreed_case ?? false,
+        });
+        console.log('[Founding] Enroll result:', JSON.stringify(foundingInfo));
+      } catch (e) {
+        console.warn('[Founding] Enroll failed:', e.message);
+      }
+    }
+
     // 如果用户有付费权限，返回完整数据
     const hasPaidAccess = await checkPaidAccess(null, customerEmail);
     if (hasPaidAccess) {
@@ -356,6 +376,13 @@ export async function POST(request) {
       } catch (e) {
         console.warn('[Unlock] Failed to auto-unlock:', e.message);
       }
+    }
+
+    if (foundingInfo) {
+      responseData.founding = foundingInfo;
+      let slotsLeft = null;
+      try { slotsLeft = Math.max(0, 30 - await countFoundingCustomers()); } catch (e) {}
+      responseData.founding.slots_left = slotsLeft;
     }
 
     if (aiErrorInfo) {
