@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Component } from 'react';
 import { useRouter } from 'next/navigation';
 import translations, { LANGUAGES } from '@/lib/i18n';
+import FoundingOffer from '@/components/FoundingOffer';
 
 // ============ Language Detection ============
 function detectLanguage() {
@@ -207,6 +208,8 @@ export default function CheckPage() {
   var [loadingText, setLoadingText] = useState('');
   var [lang, setLang] = useState('en');
   var [autoStart, setAutoStart] = useState(false);
+  var [joinFounding, setJoinFounding] = useState(false);
+  var [foundingEmail, setFoundingEmail] = useState('');
   var analysisIdRef = useRef(0);
 
   // Pre-fill URL from query parameter (e.g., from hero input) and auto-start
@@ -321,10 +324,23 @@ export default function CheckPage() {
 
     // 封装分析请求函数（支持自动重试）
     function runAnalysis() {
+      var payload = { url: inputUrl, lang: lang };
+      if (joinFounding) {
+        var fEmail = (foundingEmail || '').trim();
+        if (fEmail && fEmail.indexOf('@') !== -1) {
+          payload.email = fEmail;
+          payload.join_founding = true;
+          payload.founding_agreements = {
+            agreed_return: true,
+            agreed_feedback: true,
+            agreed_case: true,
+          };
+        }
+      }
       return fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: inputUrl, lang: lang }),
+        body: JSON.stringify(payload),
       })
       .then(function(res) {
         // Detect 504/503 timeout errors from Vercel concurrency limits
@@ -596,6 +612,16 @@ export default function CheckPage() {
               </button>
             </div>
 
+            <div style={{ marginTop: 24 }}>
+              <FoundingOffer
+                checked={joinFounding}
+                onCheckedChange={setJoinFounding}
+                email={foundingEmail}
+                onEmailChange={setFoundingEmail}
+                disabled={loading}
+              />
+            </div>
+
             {error && !errorInfo && (
               <div style={{ marginTop: 12, padding: 12, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#b91c1c', fontSize: 14 }}>
                 {error}
@@ -864,7 +890,7 @@ export default function CheckPage() {
               )}
 
               {/* Email Collection */}
-              {freeIssues.length > 0 && (
+              {freeIssues.length > 0 && !isUnlocked && (
                 <div style={{ background: '#f0fdf4', border: '1px solid #a7f3d0', borderRadius: 16, padding: 32, marginBottom: 32, textAlign: 'center' }}>
                   <h3 style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
                     {t.emailSubscribeTitle}
@@ -920,6 +946,21 @@ export default function CheckPage() {
               )}
 
               {/* CTA: Unlock Full Report */}
+              {isUnlocked ? (
+                <div style={{
+                  borderRadius: 16, padding: '28px 32px', textAlign: 'center',
+                  background: 'linear-gradient(135deg, #065f46 0%, #047857 100%)', color: '#fff',
+                }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>{'🎉'}</div>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 8px' }}>
+                    Founding spot confirmed &mdash; your full report is unlocked
+                  </h3>
+                  <p style={{ fontSize: 14, color: '#b7e4d4', margin: 0, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+                    Scroll up to see every competitor and the exact fixes below each issue. Around day 30,
+                    we&apos;ll invite you back for a free re-check to measure what changed.
+                  </p>
+                </div>
+              ) : (
               <div style={{
                 borderRadius: 16, padding: 32, textAlign: 'center', color: '#fff',
                 background: 'linear-gradient(135deg, #1e3a5f 0%, #162d4a 100%)',
@@ -976,6 +1017,45 @@ export default function CheckPage() {
                   )}
                 </div>
               </div>
+              )}
+
+              {/* Paid fixes (founding / paid users only) */}
+              {isUnlocked && Array.isArray(results.paid_fixes) && results.paid_fixes.length > 0 && (
+                <div style={{ marginTop: 32, background: '#fff', borderRadius: 16, border: '1px solid #bbf7d0', padding: 28 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, color: '#065f46', margin: '0 0 6px' }}>
+                    Your step-by-step fixes
+                  </h3>
+                  <p style={{ fontSize: 13.5, color: '#4b5563', margin: '0 0 18px' }}>
+                    Work through these in order. Each one targets a question real buyers ask AI.
+                  </p>
+                  <div style={{ display: 'grid', gap: 14 }}>
+                    {results.paid_fixes.map(function (fix, i) {
+                      return (
+                        <div key={i} style={{ border: '1px solid #d1fae5', background: '#f0fdf4', borderRadius: 12, padding: '16px 18px' }}>
+                          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                            <span style={{ background: '#10b981', color: '#fff', fontWeight: 800, fontSize: 13, width: 24, height: 24, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 700, fontSize: 15, color: '#064e3b', marginBottom: 4 }}>
+                                {fix.issue || fix.title || ('Fix ' + (i + 1))}
+                              </div>
+                              {fix.how_to_fix || fix.fix || fix.solution ? (
+                                <p style={{ margin: 0, fontSize: 13.5, color: '#374151', lineHeight: 1.65 }}>
+                                  {fix.how_to_fix || fix.fix || fix.solution}
+                                </p>
+                              ) : null}
+                              {fix.example || fix.snippet ? (
+                                <div style={{ marginTop: 10, background: '#fff', border: '1px dashed #6ee7b7', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: '#065f46' }}>
+                                  {fix.example || fix.snippet}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Full Report Contents */}
               <div style={{ marginTop: 48, background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32 }}>
