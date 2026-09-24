@@ -353,6 +353,12 @@ export async function POST(request) {
     let foundingInfo = null;
     if (customerEmail && join_founding) {
       try {
+        const { ensureFoundingSchema } = await import('../../../lib/db');
+        if (typeof ensureFoundingSchema === 'function') await ensureFoundingSchema();
+      } catch (e) {
+        console.warn('[Founding] Schema ensure failed:', e.message);
+      }
+      try {
         foundingInfo = await enrollFoundingCustomer(customerEmail, reportId, {
           agreed_return: founding_agreements?.agreed_return ?? true,
           agreed_feedback: founding_agreements?.agreed_feedback ?? true,

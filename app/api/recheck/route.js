@@ -19,8 +19,14 @@ export const maxDuration = 60;
 let dbInitialized = false;
 async function ensureDbReady() {
   if (dbInitialized) return;
-  await initDatabase();
-  dbInitialized = true;
+  try {
+    await initDatabase();
+    dbInitialized = true;
+    console.log('[DB] Recheck auto-init completed');
+  } catch (err) {
+    // 表通常早已存在；init 失败不应阻塞查询本身
+    console.warn('[DB] Recheck auto-init failed (non-critical):', err.message);
+  }
 }
 
 /**
@@ -43,6 +49,12 @@ export async function POST(request) {
     }
 
     const customerEmail = typeof email === 'string' && email.includes('@') ? email.trim().toLowerCase() : (original.email || null);
+
+    // 兜底：确保新功能依赖的表/列存在（init 若曾静默失败，这里补建）
+    try {
+      const { ensureFoundingSchema } = await import('../../../lib/db');
+      if (typeof ensureFoundingSchema === 'function') await ensureFoundingSchema();
+    } catch (e) {}
 
     // 权限：报告已解锁 / 有订阅 / 创始用户
     let allowed = original.unlocked === true;
