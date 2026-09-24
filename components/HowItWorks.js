@@ -23,7 +23,7 @@ export default function HowItWorks() {
       description: p.howStep2Desc,
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.9C3.48 14.9 3 13.5 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
         </svg>
       ),
     },
@@ -33,7 +33,17 @@ export default function HowItWorks() {
       description: p.howStep3Desc,
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      ),
+    },
+    {
+      number: '04',
+      title: p.howStep4Title,
+      description: p.howStep4Desc,
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3v18h18M7 14l4-4 3 3 5-6"/>
         </svg>
       ),
     },
@@ -41,7 +51,20 @@ export default function HowItWorks() {
 
   return (
     <section id="how-it-works" className="py-20 bg-white">
-      <div className="max-w-5xl mx-auto px-4">
+      <div className="max-w-6xl mx-auto px-4">
+        {/* 数据冲击条：先回答“为什么需要 AI 搜索可见度” */}
+        <div className="max-w-3xl mx-auto mb-12 rounded-2xl bg-gradient-to-r from-primary-700 to-primary-600 px-8 py-7 text-center text-white shadow-lg">
+          <p className="text-lg md:text-xl font-semibold leading-relaxed">
+            {p.howStat}
+          </p>
+          <p className="mt-2 font-medium text-primary-100">
+            {p.howStatQuestion}
+          </p>
+          <p className="mt-3 text-xs text-primary-200">
+            {p.howStatSource}
+          </p>
+        </div>
+
         <div className="text-center mb-14">
           <h2 className="text-3xl md:text-4xl font-bold text-primary-700 mb-4">
             {p.howTitle}
@@ -51,9 +74,9 @@ export default function HowItWorks() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 relative">
-          {/* 连接线（桌面端） */}
-          <div className="hidden md:block absolute top-16 left-1/3 right-1/3 h-0.5 bg-gradient-to-r from-primary-200 via-accent-300 to-primary-200"></div>
+        <div className="grid md:grid-cols-4 gap-8 relative">
+          {/* 连接线（桌面端，穿过四个图标中心） */}
+          <div className="hidden md:block absolute top-10 left-[12.5%] right-[12.5%] h-0.5 bg-gradient-to-r from-primary-200 via-accent-300 to-primary-200"></div>
 
           {steps.map((step, i) => (
             <div key={i} className="relative text-center">
