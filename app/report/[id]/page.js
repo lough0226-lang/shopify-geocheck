@@ -727,14 +727,11 @@ export default function ReportPage() {
                 onMouseOver={function(e) { e.currentTarget.style.backgroundColor = '#059669'; }}
                 onMouseOut={function(e) { e.currentTarget.style.backgroundColor = '#10b981'; }}
               >
-                {tk('unlockTitle', 'Unlock Full Report')} — {tk('unlockPrice', '$19 one-time report')}
+                {tk('unlockTitle', 'Unlock Full Report')} — {tk('unlockPrice', '$29/month · 5 reports')}
               </button>
 
-              <p style={{ fontSize: 13, marginTop: 16, color: '#8bb5db' }}>
-                {tk('unlockPro', '$29/month Pro plan')}
-              </p>
-              <p style={{ fontSize: 11, marginTop: 10, marginBottom: 0, color: '#6ee7b7' }}>
-                {'\u2705'} Cancel anytime {'\u2022'} {'\u2705'} Instant access
+              <p style={{ fontSize: 12, marginTop: 14, marginBottom: 0, color: '#6ee7b7' }}>
+                {'\u2705'} Monthly subscription {'\u2022'} {'\u2705'} Cancel anytime {'\u2022'} {'\u2705'} Instant access
               </p>
             </div>
           </div>

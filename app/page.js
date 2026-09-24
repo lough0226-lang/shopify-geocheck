@@ -64,7 +64,7 @@ export default function HomePage() {
             </h2>
             <p className="text-base mb-6" style={{ color: '#b7e4d4', lineHeight: 1.7, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto' }}>
               The first 30 Shopify stores unlock the complete competitor breakdown and fix list
-              (normally $19) at no cost, plus a free 30-day re-check that measures whether your
+              (normally $29/month) at no cost, plus a free 30-day re-check that measures whether your
               visibility in ChatGPT, Perplexity and Google AI Overviews actually improved.
             </p>
             <Link href="/check" className="inline-block font-bold text-lg" style={{ background: '#10b981', color: '#fff', padding: '14px 36px', borderRadius: 10, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.2)' }}>

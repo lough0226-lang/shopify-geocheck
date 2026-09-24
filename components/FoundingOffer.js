@@ -63,7 +63,7 @@ export default function FoundingOffer(props) {
         <p style={{ fontSize: compact ? 13.5 : 14.5, lineHeight: 1.65, color: '#b7e4d4', margin: '0 0 16px', maxWidth: 620 }}>
           We&apos;re opening 30 founding spots to prove that acting on a report actually lifts your
           visibility in ChatGPT, Perplexity and Google AI Overviews. Claim a spot and unlock the
-          complete competitor breakdown and fix list &mdash; normally $19 &mdash; at no cost.
+          complete competitor breakdown and fix list &mdash; normally $29/month &mdash; at no cost.
         </p>
 
         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 18px', display: 'grid', gap: 8, fontSize: 13.5, color: '#d1fae5' }}>
