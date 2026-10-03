@@ -43,7 +43,22 @@ export async function POST(request) {
     // Creem sends eventType field and wraps data in event.object { order, customer, subscription... }
     const eventType = event.eventType || event.event || event.type || '';
 
+    // Handle non-checkout events (refund, dispute, subscription lifecycle)
+    const alertableEvents = [
+      'refund.created',
+      'dispute.created',
+      'subscription.past_due',
+      'subscription.expired',
+      'subscription.canceled',
+    ];
+
     if (eventType !== 'checkout.completed') {
+      if (alertableEvents.includes(eventType)) {
+        // Fire-and-forget alert processing; respond immediately
+        handleAlertEvent(eventType, event).catch(err => {
+          console.error(`[Webhook] Alert handling error for ${eventType}:`, err.message);
+        });
+      }
       return NextResponse.json({ received: true, event: eventType });
     }
 
@@ -363,3 +378,140 @@ async function sendOwnerAlert({ type, orderId, reportId, customerEmail, error, m
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/**
+ * Handle alert-type webhook events (refund, dispute, subscription lifecycle)
+ * Logs details and sends alert email to owner
+ */
+async function handleAlertEvent(eventType, event) {
+  const objectData = event.object || event.data?.object || event.data || {};
+
+  // Extract common fields
+  const orderData = objectData.order || objectData || {};
+  const customerData = objectData.customer || orderData.customer || {};
+  const customerEmail = customerData.email || orderData.customer?.email || 'unknown';
+  const orderId = orderData.id || orderData.order_id || objectData.order_id || 'N/A';
+  const amount = objectData.amount || objectData.refund_amount || objectData.total_amount || orderData.amount || 0;
+  const currency = objectData.currency || orderData.currency || 'USD';
+
+  // Event-specific details
+  let detailText = '';
+  let alertTitle = '';
+
+  switch (eventType) {
+    case 'refund.created':
+      alertTitle = '💰 退款告警';
+      detailText = `
+        <p><strong>退款金额：</strong>$${(amount / 100).toFixed(2)} ${currency}</p>
+        <p><strong>退款原因：</strong>${objectData.reason || objectData.refund_reason || '未说明'}</p>
+      `;
+      console.error(`[Webhook] REFUND: orderId=${orderId}, email=${customerEmail}, amount=${amount}`);
+      break;
+
+    case 'dispute.created':
+      alertTitle = '🚨 争议告警';
+      detailText = `
+        <p><strong>争议金额：</strong>$${(amount / 100).toFixed(2)} ${currency}</p>
+        <p><strong>争议原因：</strong>${objectData.reason || objectData.dispute_reason || '未说明'}</p>
+      `;
+      console.error(`[Webhook] DISPUTE: orderId=${orderId}, email=${customerEmail}, amount=${amount}`);
+      break;
+
+    case 'subscription.past_due':
+      alertTitle = '⚠️ 订阅逾期告警';
+      const subData1 = objectData.subscription || objectData || {};
+      detailText = `
+        <p><strong>订阅ID：</strong>${subData1.id || 'N/A'}</p>
+        <p><strong>订阅计划：</strong>${subData1.plan_name || subData1.plan || 'N/A'}</p>
+        <p><strong>客户邮箱：</strong>${customerEmail}</p>
+        <p>订阅已逾期，可能扣款失败。请尽快联系客户更新支付方式。</p>
+      `;
+      console.error(`[Webhook] SUBSCRIPTION PAST_DUE: subId=${subData1.id}, email=${customerEmail}`);
+      break;
+
+    case 'subscription.expired':
+      alertTitle = '📋 订阅过期通知';
+      const subData2 = objectData.subscription || objectData || {};
+      detailText = `
+        <p><strong>订阅ID：</strong>${subData2.id || 'N/A'}</p>
+        <p><strong>订阅计划：</strong>${subData2.plan_name || subData2.plan || 'N/A'}</p>
+        <p><strong>客户邮箱：</strong>${customerEmail}</p>
+      `;
+      console.log(`[Webhook] SUBSCRIPTION EXPIRED: subId=${subData2.id}, email=${customerEmail}`);
+      break;
+
+    case 'subscription.canceled':
+      alertTitle = '❌ 订阅取消通知';
+      const subData3 = objectData.subscription || objectData || {};
+      detailText = `
+        <p><strong>订阅ID：</strong>${subData3.id || 'N/A'}</p>
+        <p><strong>订阅计划：</strong>${subData3.plan_name || subData3.plan || 'N/A'}</p>
+        <p><strong>客户邮箱：</strong>${customerEmail}</p>
+        <p><strong>取消原因：</strong>${objectData.cancellation_reason || subData3.cancellation_reason || '未说明'}</p>
+      `;
+      console.log(`[Webhook] SUBSCRIPTION CANCELED: subId=${subData3.id}, email=${customerEmail}`);
+      break;
+
+    default:
+      return; // Unknown event type, skip
+  }
+
+  await sendWebhookAlert({
+    eventType,
+    title: alertTitle,
+    orderId,
+    customerEmail,
+    amount,
+    currency,
+    detailHtml: detailText,
+    rawEvent: event,
+  });
+}
+
+/**
+ * Send webhook alert email to site owner
+ */
+async function sendWebhookAlert({ eventType, title, orderId, customerEmail, amount, currency, detailHtml, rawEvent }) {
+  const apiKey = process.env.BREVO_API_KEY;
+  const ownerEmail = process.env.OWNER_EMAIL || 'mygeocheck@coze.email';
+  if (!apiKey) {
+    console.warn('[Webhook] BREVO_API_KEY not set, cannot send alert email');
+    return;
+  }
+
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
+      body: JSON.stringify({
+        sender: { name: 'MyGEOCheck Webhook Monitor', email: 'hello@mygeocheck.com' },
+        to: [{ email: ownerEmail }],
+        subject: `${title} - 订单 ${orderId}`,
+        htmlContent: `<!DOCTYPE html>
+<html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f9fafb;">
+  <div style="background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+    <h1 style="color:#dc2626;margin-top:0;font-size:22px;">${title}</h1>
+    <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:20px;margin:16px 0;">
+      <p><strong>事件类型：</strong>${eventType}</p>
+      <p><strong>订单号：</strong>${orderId}</p>
+      <p><strong>客户邮箱：</strong>${customerEmail}</p>
+      <p><strong>金额：</strong>$${typeof amount === 'number' ? (amount / 100).toFixed(2) : amount} ${currency}</p>
+      <p><strong>时间：</strong>${new Date().toISOString()}</p>
+      ${detailHtml}
+    </div>
+    <p style="color:#6b7280;font-size:13px;">此邮件由 MyGEOCheck Webhook 监控系统自动发送。</p>
+  </div>
+</body></html>`,
+      }),
+    });
+
+    if (res.ok) {
+      console.log('[Webhook] Alert email sent to owner:', title);
+    } else {
+      const errBody = await res.text();
+      console.error('[Webhook] Alert email failed:', res.status, errBody);
+    }
+  } catch (e) {
+    console.error('[Webhook] Alert email error:', e.message);
+  }
+}
