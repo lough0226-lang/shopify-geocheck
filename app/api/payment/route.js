@@ -8,15 +8,16 @@ export const dynamic = 'force-dynamic';
 /**
  * POST /api/payment
  * Creates a Creem checkout session for the GEO Visibility Report
- * Body: { report_id: string, email?: string }
+ * Body: { report_id: string, email?: string, plan?: 'onetime' | 'sub' }
  *
  * Required env vars:
- *   CREEM_API_KEY     - Creem API key (from Developers section of dashboard)
- *   CREEM_PRODUCT_ID  - Product ID for the $29 GEO report
+ *   CREEM_API_KEY              - Creem API key (from Developers section of dashboard)
+ *   CREEM_PRODUCT_ID           - Product ID for the $29/month subscription
+ *   CREEM_ONETIME_PRODUCT_ID   - (Optional) Product ID for the $19 one-time report
  */
 export async function POST(request) {
   try {
-    const { report_id, email: rawEmail } = await request.json();
+    const { report_id, email: rawEmail, plan } = await request.json();
     const email = typeof rawEmail === 'string' && rawEmail.includes('@') ? rawEmail.trim() : null;
 
     if (!report_id) {
@@ -27,7 +28,11 @@ export async function POST(request) {
     }
 
     const apiKey = process.env.CREEM_API_KEY;
-    const productId = process.env.CREEM_PRODUCT_ID || process.env.NEXT_PUBLIC_CREEM_PRODUCT_ID;
+    // plan === 'sub' uses subscription product; otherwise one-time (default)
+    const isSubscription = plan === 'sub';
+    const productId = isSubscription
+      ? (process.env.CREEM_PRODUCT_ID || process.env.NEXT_PUBLIC_CREEM_PRODUCT_ID)
+      : (process.env.CREEM_ONETIME_PRODUCT_ID || process.env.CREEM_PRODUCT_ID || process.env.NEXT_PUBLIC_CREEM_PRODUCT_ID);
     const testMode = process.env.CREEM_TEST_MODE === 'true';
     const creemBaseUrl = testMode ? 'https://test-api.creem.io' : 'https://api.creem.io';
 
@@ -58,6 +63,7 @@ export async function POST(request) {
       success_url: `${baseUrl}/report/${report_id}?status=success`,
       metadata: {
         report_id: report_id,
+        plan: isSubscription ? 'sub' : 'onetime',
         source: 'mygeocheck.com',
       },
     };

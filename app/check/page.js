@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, Component } from 'react';
 import { useRouter } from 'next/navigation';
 import translations, { LANGUAGES } from '@/lib/i18n';
-import FoundingOffer from '@/components/FoundingOffer';
 
 // ============ Language Detection ============
 function detectLanguage() {
@@ -384,6 +383,7 @@ export default function CheckPage() {
             competitors: Array.isArray(data.competitors) ? data.competitors : [],
             diagnosis: Array.isArray(data.diagnosis) ? data.diagnosis : (Array.isArray(data.free_issues) ? data.free_issues : []),
             paid_fixes_teasers: Array.isArray(data.paid_fixes_teasers) ? data.paid_fixes_teasers : [],
+            paid_fixes_unlocked: Array.isArray(data.paid_fixes_unlocked) ? data.paid_fixes_unlocked : [],
             paid_value_prop: data.paid_value_prop || '',
             unlocked: data.unlocked || false,
             free_issues: Array.isArray(data.diagnosis || data.free_issues) ? (data.diagnosis || data.free_issues) : [],
@@ -454,7 +454,7 @@ export default function CheckPage() {
     });
   }
 
-  function handleCheckout() {
+  function handleCheckout(plan) {
     if (!results || !results.report_id) return;
 
     // Store report_id and email for success page (in case email delivery fails)
@@ -471,7 +471,7 @@ export default function CheckPage() {
     fetch('/api/payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ report_id: results.report_id }),
+      body: JSON.stringify({ report_id: results.report_id, plan: plan || 'onetime' }),
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
@@ -510,6 +510,7 @@ export default function CheckPage() {
   var queryMatchScores = (results && Array.isArray(results.query_match_scores)) ? results.query_match_scores : [];
   var competitors = (results && Array.isArray(results.competitors)) ? results.competitors : [];
   var paidFixesTeasers = (results && Array.isArray(results.paid_fixes_teasers)) ? results.paid_fixes_teasers : [];
+  var paidFixesUnlocked = (results && Array.isArray(results.paid_fixes_unlocked)) ? results.paid_fixes_unlocked : [];
   var isUnlocked = results && results.unlocked === true;
 
   // Verdict 样式
@@ -611,52 +612,6 @@ export default function CheckPage() {
                 {loading ? t.analyzingBtn : t.analyzeBtn}
               </button>
             </div>
-
-            <div style={{ marginTop: 24 }}>
-              <FoundingOffer
-                checked={joinFounding}
-                onCheckedChange={setJoinFounding}
-                email={foundingEmail}
-                onEmailChange={setFoundingEmail}
-                disabled={loading}
-              />
-            </div>
-
-            {error && !errorInfo && (
-              <div style={{ marginTop: 12, padding: 12, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#b91c1c', fontSize: 14 }}>
-                {error}
-              </div>
-            )}
-
-            {/* Structured Error Card with suggestions */}
-            {error && errorInfo && (
-              <div style={{ marginTop: 16, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: 20, overflow: 'hidden' }}>
-                {/* Error icon + title */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                  <span style={{ fontSize: 22 }}>
-                    {errorInfo.type === 'NOT_FOUND' ? '🔍' : errorInfo.type === 'ANTI_BOT' ? '🛡️' : errorInfo.type === 'ACCESS_DENIED' ? '🔒' : '⚠️'}
-                  </span>
-                  <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#92400e' }}>
-                    {errorInfo.title}
-                  </h4>
-                </div>
-                {/* Error explanation */}
-                <p style={{ margin: '0 0 14px 0', fontSize: 14, color: '#78350f', lineHeight: 1.6 }}>
-                  {error}
-                </p>
-                {/* Suggestions */}
-                {errorInfo.suggestions && errorInfo.suggestions.length > 0 && (
-                  <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '12px 16px' }}>
-                    <p style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 600, color: '#92400e' }}>💡 What you can try:</p>
-                    <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: '#78350f', lineHeight: 1.8 }}>
-                      {errorInfo.suggestions.map(function(s, i) {
-                        return <li key={i}>{s}</li>;
-                      })}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
 
             <p style={{ marginTop: 12, fontSize: 12, color: '#9ca3af' }}>
               {t.urlHint}
@@ -850,7 +805,9 @@ export default function CheckPage() {
                         : issue.severity === 'low'
                         ? { bg: '#eff6ff', border: '#bfdbfe', icon: '🔵', badgeBg: '#dbeafe', badgeText: '#1d4ed8', label: t.lowImpact }
                         : { bg: '#fffbeb', border: '#fde68a', icon: '🟡', badgeBg: '#fef3c7', badgeText: '#b45309', label: t.mediumImpact };
-                      var teaser = paidFixesTeasers[index];
+                      // teasers 现在只覆盖 index>=1 的诊断（第 1 个 fix 已免费解锁）
+                      var teaser = index >= 1 ? paidFixesTeasers[index - 1] : null;
+                      var firstFix = !isUnlocked && index === 0 && paidFixesUnlocked.length > 0 ? paidFixesUnlocked[0] : null;
                       return (
                         <div key={index} style={{ background: sev.bg, border: '1px solid ' + sev.border, borderRadius: 12, padding: 20 }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 12 }}>
@@ -869,8 +826,38 @@ export default function CheckPage() {
                               <p style={{ fontSize: 14, color: '#4b5563', margin: 0 }}>{issue.impact}</p>
                             </div>
                           )}
-                          {/* 付费 teaser：免费版只露一句诱人的话，不露方案 */}
-                          {!isUnlocked && (
+                          {/* 免费版第 1 个 fix 完整解锁 */}
+                          {firstFix && (
+                            <div style={{
+                              marginTop: 16, background: '#f0fdf4', border: '1px solid #bbf7d0',
+                              borderRadius: 10, padding: '14px 16px',
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                <span style={{
+                                  background: '#10b981', color: '#fff', fontWeight: 800,
+                                  fontSize: 11, padding: '2px 8px', borderRadius: 999,
+                                }}>✅ 免费解锁修复</span>
+                                <span style={{ fontSize: 12, color: '#047857', fontWeight: 600 }}>
+                                  {firstFix.category || firstFix.title || 'Fix'}
+                                </span>
+                              </div>
+                              {(firstFix.how_to_fix || firstFix.fix || firstFix.solution) && (
+                                <p style={{ margin: 0, fontSize: 13.5, color: '#374151', lineHeight: 1.65 }}>
+                                  {firstFix.how_to_fix || firstFix.fix || firstFix.solution}
+                                </p>
+                              )}
+                              {(firstFix.example || firstFix.snippet) && (
+                                <div style={{
+                                  marginTop: 10, background: '#fff', border: '1px dashed #6ee7b7',
+                                  borderRadius: 8, padding: '10px 12px', fontSize: 13, color: '#065f46',
+                                }}>
+                                  {firstFix.example || firstFix.snippet}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {/* 其余付费 teaser：免费版只露一句诱人的话 */}
+                          {!isUnlocked && !firstFix && (
                             <div style={{
                               marginTop: 16, background: 'rgba(255,255,255,0.5)', borderRadius: 8,
                               padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
@@ -945,6 +932,24 @@ export default function CheckPage() {
                 </div>
               )}
 
+              {/* Transparent pricing bar */}
+              <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 999, padding: '8px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 13, color: '#4b5563', flexWrap: 'wrap' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#9ca3af' }} />
+                  {t.pricingBarFree || 'Free score'}
+                </span>
+                <span style={{ color: '#d1d5db' }}>·</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1e3a5f' }} />
+                  {t.pricingBarOneTime || '$19 one-time report'}
+                </span>
+                <span style={{ color: '#d1d5db' }}>·</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} />
+                  {t.pricingBarSub || '$29/mo with monitoring'}
+                </span>
+              </div>
+
               {/* CTA: Unlock Full Report */}
               {isUnlocked ? (
                 <div style={{
@@ -953,27 +958,91 @@ export default function CheckPage() {
                 }}>
                   <div style={{ fontSize: 40, marginBottom: 12 }}>{'🎉'}</div>
                   <h3 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 8px' }}>
-                    Founding spot confirmed &mdash; your full report is unlocked
+                    Your full report is unlocked
                   </h3>
-                  <p style={{ fontSize: 14, color: '#b7e4d4', margin: 0, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
-                    Scroll up to see every competitor and the exact fixes below each issue. Around day 30,
-                    we&apos;ll invite you back for a free re-check to measure what changed.
+                  <p style={{ fontSize: 14, color: '#b7e4d4', margin: 0, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+                    Scroll up to see every competitor and the exact fixes below each issue.
                   </p>
                 </div>
               ) : (
               <div style={{
-                borderRadius: 16, padding: 32, textAlign: 'center', color: '#fff',
+                borderRadius: 16, padding: 32, color: '#fff',
                 background: 'linear-gradient(135deg, #1e3a5f 0%, #162d4a 100%)',
                 position: 'relative', overflow: 'hidden',
               }}>
                 <div style={{ position: 'relative', zIndex: 1 }}>
-                  <div style={{ fontSize: 48, marginBottom: 16 }}>{'\u{1F513}'}</div>
-                  <h3 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>{t.ctaTitle}</h3>
-                  <p style={{ fontSize: 14, marginBottom: 24, maxWidth: 500, marginLeft: 'auto', marginRight: 'auto', color: '#8bb5db' }}>
-                    {t.ctaSubtitle}
-                  </p>
+                  <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                    <div style={{ fontSize: 40, marginBottom: 12 }}>{'\u{1F513}'}</div>
+                    <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>{t.ctaTitle}</h3>
+                    <p style={{ fontSize: 14, marginBottom: 0, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto', color: '#8bb5db' }}>
+                      {t.ctaSubtitle}
+                    </p>
+                  </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 32, fontSize: 14, maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
+                  {/* 双选项方案 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14, maxWidth: 680, margin: '0 auto 20px' }}>
+                    {/* 推荐: $29/月 */}
+                    <button
+                      onClick={function() { handleCheckout('sub'); }}
+                      style={{
+                        background: '#10b981', color: '#fff', border: 'none', borderRadius: 12,
+                        padding: '18px 18px', textAlign: 'left', cursor: 'pointer',
+                        position: 'relative', transition: 'all 0.2s',
+                      }}
+                      onMouseOver={function(e) { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                      onMouseOut={function(e) { e.currentTarget.style.transform = 'translateY(0)'; }}
+                    >
+                      <span style={{
+                        position: 'absolute', top: -8, right: 12,
+                        background: '#fbbf24', color: '#1f2937',
+                        fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 999,
+                        letterSpacing: 0.5,
+                      }}>
+                        {t.paywallBadgeBestValue || 'BEST VALUE'}
+                      </span>
+                      <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 2 }}>$29<span style={{ fontSize: 13, fontWeight: 500, opacity: 0.8 }}>/month</span></div>
+                      <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 10 }}>{t.paywallSecondarySub || 'Report + 4 re-scans + monitoring + alerts'}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {t.paywallSecondaryCta || 'Start Monitoring'}
+                        <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </div>
+                    </button>
+
+                    {/* $19 一次性 */}
+                    <button
+                      onClick={function() { handleCheckout('onetime'); }}
+                      style={{
+                        background: 'rgba(255,255,255,0.08)', color: '#fff',
+                        border: '1.5px solid rgba(255,255,255,0.25)', borderRadius: 12,
+                        padding: '18px 18px', textAlign: 'left', cursor: 'pointer',
+                        position: 'relative', transition: 'all 0.2s',
+                      }}
+                      onMouseOver={function(e) { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
+                      onMouseOut={function(e) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                    >
+                      <span style={{
+                        position: 'absolute', top: -8, right: 12,
+                        background: 'rgba(255,255,255,0.2)', color: '#fff',
+                        fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 999,
+                        letterSpacing: 0.5,
+                      }}>
+                        {t.paywallBadgeOneTime || 'ONE-TIME'}
+                      </span>
+                      <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 2 }}>$19<span style={{ fontSize: 13, fontWeight: 500, opacity: 0.8 }}> one-time</span></div>
+                      <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 10 }}>{t.paywallPrimarySub || 'Pay once. Keep the report forever.'}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {t.paywallPrimaryCta || 'Get Full Report — $19'}
+                        <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Feature list */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, fontSize: 13, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto', marginBottom: 18 }}>
                     {[
                       { title: t.ctaFeature1, sub: t.ctaFeature1Sub },
                       { title: t.ctaFeature2, sub: t.ctaFeature2Sub },
@@ -981,43 +1050,40 @@ export default function CheckPage() {
                       { title: t.ctaFeature4, sub: t.ctaFeature4Sub },
                     ].map(function(item, i) {
                       return (
-                        <div key={i} style={{ borderRadius: 8, padding: 12, background: 'rgba(255,255,255,0.1)' }}>
-                          <div style={{ fontWeight: 600 }}>{item.title}</div>
-                          <div style={{ fontSize: 12, color: '#8bb5db' }}>{item.sub}</div>
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#e0f2fe' }}>
+                          <span style={{ color: '#6ee7b7', fontWeight: 800 }}>{'✓'}</span>
+                          <span><strong>{item.title}</strong> <span style={{ opacity: 0.7, fontSize: 12 }}>· {item.sub}</span></span>
                         </div>
                       );
                     })}
                   </div>
 
-                  <button
-                    onClick={handleCheckout}
-                    style={{
-                      background: '#10b981', color: '#fff', fontWeight: 700,
-                      padding: '16px 40px', borderRadius: 8, border: 'none',
-                      fontSize: 18, cursor: 'pointer',
-                      display: 'inline-flex', alignItems: 'center', gap: 8,
-                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
-                    }}
-                    onMouseOver={function(e) { e.currentTarget.style.backgroundColor = '#059669'; }}
-                    onMouseOut={function(e) { e.currentTarget.style.backgroundColor = '#10b981'; }}
-                  >
-                    {t.ctaButton} — {t.ctaButtonPrice}
-                    <svg style={{ width: 20, height: 20 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </button>
-
-                  <p style={{ fontSize: 12, marginTop: 16, color: '#6ee7b7' }}>
-                    {t.ctaGuarantee} &bull; {t.ctaGuarantee2} &bull; {t.ctaGuarantee3}
+                  {/* 社会证明 + 退款保证 */}
+                  <div style={{
+                    background: 'rgba(110,231,183,0.1)', border: '1px solid rgba(110,231,183,0.25)',
+                    borderRadius: 10, padding: '10px 16px', maxWidth: 520, margin: '0 auto 10px',
+                    textAlign: 'center', fontSize: 13, color: '#6ee7b7',
+                  }}>
+                    🛡️ {t.paywallRefund || '7-day money-back guarantee. No questions asked.'}
+                  </div>
+                  <p style={{ fontSize: 11, marginTop: 8, marginBottom: 0, color: '#8bb5db', textAlign: 'center' }}>
+                    🔒 {t.paywallPaymentMethods || 'Secure payment via Creem · PayPal · Shop Pay · Card'}
                   </p>
                   {t.ctaPriceNote && (
-                    <p style={{ fontSize: 11, marginTop: 10, marginBottom: 0, color: '#8bb5db', lineHeight: 1.6, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>
+                    <p style={{ fontSize: 11, marginTop: 10, marginBottom: 0, color: '#8bb5db', lineHeight: 1.6, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto', textAlign: 'center' }}>
                       {'\u2139\uFE0F'} {t.ctaPriceNote}
                     </p>
                   )}
                 </div>
               </div>
               )}
+
+              {/* Founding customer application (low-profile) */}
+              <div style={{ marginTop: 20, textAlign: 'center', fontSize: 12, color: '#6b7280' }}>
+                <a href="mailto:hello@mygeocheck.com?subject=Founding%20User%20Application&body=Hi%20team%2C%0AI%27d%20like%20to%20apply%20for%20a%20founding%20spot.%0A%0AMy%20Shopify%20store%3A%20%5Byour-store-url%5D%0A%0AThanks!" style={{ color: '#6b7280', textDecoration: 'underline' }}>
+                  Interested in a free founding spot? Apply here →
+                </a>
+              </div>
 
               {/* Paid fixes (founding / paid users only) */}
               {isUnlocked && Array.isArray(results.paid_fixes) && results.paid_fixes.length > 0 && (

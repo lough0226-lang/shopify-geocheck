@@ -329,7 +329,11 @@ export async function POST(request) {
       });
     }
 
-    // 构建免费版响应（模糊竞品，paid_fixes 变 teasers）
+    // 构建免费版响应（模糊竞品，paid_fixes 只完整解锁第 1 个，其余变 teasers）
+    const allFixes = Array.isArray(analysisResult.paid_fixes) ? analysisResult.paid_fixes : [];
+    const firstFixUnlocked = allFixes.length > 0 ? [allFixes[0]] : [];
+    const remainingTeasers = allFixes.length > 1 ? generateTeasers(allFixes.slice(1)) : [];
+
     const responseData = {
       success: true,
       score: analysisResult.score,
@@ -341,7 +345,8 @@ export async function POST(request) {
       query_match_scores: analysisResult.query_match_scores,
       competitors: blurCompetitors(analysisResult.competitors),
       diagnosis: analysisResult.diagnosis,
-      paid_fixes_teasers: generateTeasers(analysisResult.paid_fixes),
+      paid_fixes_unlocked: firstFixUnlocked,
+      paid_fixes_teasers: remainingTeasers,
       paid_value_prop: analysisResult.paid_value_prop,
       report_id: reportId,
       unlocked: false,
@@ -480,9 +485,11 @@ export async function GET(request) {
     baseResponse.paid_fixes = report.paid_fixes || [];
     baseResponse.overall_recommendations = report.full_report?.overall_recommendations || '';
   } else {
-    // 免费版：模糊竞品 + teasers
+    // 免费版：模糊竞品 + 完整解锁第 1 个 fix，其余变 teasers
     baseResponse.competitors = blurCompetitors(report.competitors);
-    baseResponse.paid_fixes_teasers = generateTeasers(report.paid_fixes);
+    const storedFixes = Array.isArray(report.paid_fixes) ? report.paid_fixes : [];
+    baseResponse.paid_fixes_unlocked = storedFixes.length > 0 ? [storedFixes[0]] : [];
+    baseResponse.paid_fixes_teasers = storedFixes.length > 1 ? generateTeasers(storedFixes.slice(1)) : [];
     baseResponse.paid_value_prop = 'Unlock specific fix instructions, competitor names, schema code snippets, and multi-platform analysis (ChatGPT + Perplexity + Google AI)';
   }
 
