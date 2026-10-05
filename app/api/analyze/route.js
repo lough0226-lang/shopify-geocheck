@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { scrapeProductPage, isValidShopifyUrl, looksLikeProductPage, nonProductPageError } from '../../../lib/scraper';
 import { analyzeProduct } from '../../../lib/openai';
 import { recordEvent, domainFromUrl } from '../../../lib/analytics';
-import { findCategoryCompetitor } from '../../../lib/shopifyCompetitors';
+import { findCategoryCompetitor, analyzeCompetitor } from '../../../lib/shopifyCompetitors';
 import { saveReport, getReport, unlockReport, updateApiUsage, getApiUsage, initDatabase, getActiveSubscription, getSubscriptionUsage, incrementSubscriptionUsage, isFoundingCustomer, enrollFoundingCustomer, countFoundingCustomers } from '../../../lib/db';
 
 // 强制使用 Node.js 运行时（非 Edge Runtime）
@@ -98,10 +98,12 @@ function blurCompetitors(competitors) {
 }
 
 /**
- * 为免费版查找同品类真实竞品（带超时保护，最多 5 秒）
- * @returns {Promise<object|null>} { name, domain, category, category_label, verified }
+ * 为免费版查找同品类真实竞品（带超时保护，最多 10 秒）
+ * @param {object} productData
+ * @param {string} url
+ * @returns {Promise<object|null>} { name, domain, category, category_label, verified, product_url }
  */
-async function findFreeTierCompetitor(productData) {
+async function findFreeTierCompetitor(productData, url) {
   try {
     const timeout = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('competitor lookup timeout')), 10000)
@@ -282,17 +284,28 @@ export async function POST(request) {
       console.warn(`[Budget] WARNING: Approaching limit. $${cost.toFixed(2)} / $${monthlyBudget}`);
     }
 
-    // 调用 AI 分析 + 同品类真实竞品查找（并行，节省时间）
+    // 调用 AI 分析 + 同品类真实竞品查找
     let analysisResult;
     let aiErrorInfo = null;
     let categoryCompetitor = null;
+    let competitorAnalysis = null;
+
+    // 提前判断付费权限（用于决定是否跑竞品分析）
+    const hasPaidAccess = await checkPaidAccess(null, customerEmail);
+
     try {
-      const [aiRes, competitorRes] = await Promise.all([
+      // 先找到竞品（超时保护）
+      categoryCompetitor = await findFreeTierCompetitor(productData, url);
+
+      // 并行：用户产品分析 + 竞品分析（仅免费版首次评测，付费用户跳过竞品分析以省成本）
+      const [aiRes, compAnalysis] = await Promise.all([
         analyzeProduct(productData, url, lang || 'en'),
-        findFreeTierCompetitor(productData),
+        (categoryCompetitor && categoryCompetitor.product_url && !hasPaidAccess)
+          ? analyzeCompetitor(categoryCompetitor)
+          : Promise.resolve(null),
       ]);
       analysisResult = aiRes;
-      categoryCompetitor = competitorRes;
+      competitorAnalysis = compAnalysis;
     } catch (aiError) {
       console.error('AI analysis failed after all retries:', aiError.message);
       aiErrorInfo = aiError.message;
@@ -340,6 +353,8 @@ export async function POST(request) {
                 category: categoryCompetitor.category_label,
                 verified: categoryCompetitor.verified,
                 _category_competitor: true,
+                competitor_score: competitorAnalysis?.score || null,
+                competitor_verdict: competitorAnalysis?.verdict || null,
               },
               ...aiComps,
             ];
@@ -391,7 +406,13 @@ export async function POST(request) {
           domain: categoryCompetitor.domain,
           category: categoryCompetitor.category_label,
           verified: categoryCompetitor.verified,
-          why_they_win: 'Frequently recommended by AI for this category',
+          // 方案 B：如果有竞品分析结果，显示真实对比文案
+          why_they_win: competitorAnalysis
+            ? `Scored ${competitorAnalysis.score}/100 on AI search optimization`
+            : 'A strong competitor in your category — see how you compare',
+          // 附带竞品分析数据供前端展示
+          competitor_score: competitorAnalysis?.score || null,
+          competitor_verdict: competitorAnalysis?.verdict || null,
         }].concat(blurredFill);
       }
       return blurCompetitors(analysisResult.competitors);
@@ -440,7 +461,6 @@ export async function POST(request) {
     }
 
     // 如果用户有付费权限，返回完整数据
-    const hasPaidAccess = await checkPaidAccess(null, customerEmail);
     if (hasPaidAccess) {
       responseData.competitors = analysisResult.competitors;
       responseData.paid_fixes = analysisResult.paid_fixes;
@@ -556,6 +576,8 @@ export async function GET(request) {
       baseResponse.category_competitor = {
         name: catComp.name, domain: catComp.domain,
         category: catComp.category, category_label: catComp.category, verified: !!catComp.verified,
+        competitor_score: catComp.competitor_score || null,
+        competitor_verdict: catComp.competitor_verdict || null,
       };
       baseResponse.competitors = [{
         name: catComp.name, domain: catComp.domain,

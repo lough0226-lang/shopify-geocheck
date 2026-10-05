@@ -755,7 +755,12 @@ export default function CheckPage() {
                       domain: categoryComp.domain,
                       category: categoryComp.category_label,
                       verified: categoryComp.verified,
-                      why_they_win: tk('realCompetitorWhy', 'Frequently recommended by AI for this category'),
+                      // 方案 B：使用真实竞品分数对比文案
+                      why_they_win: categoryComp.competitor_score
+                        ? `Scored ${categoryComp.competitor_score}/100 on AI search optimization`
+                        : tk('realCompetitorWhy', 'A strong competitor in your category'),
+                      competitor_score: categoryComp.competitor_score || null,
+                      user_score: results.score || 0,
                     }].concat(competitors.slice(1));
                   }
                 }
@@ -818,6 +823,37 @@ export default function CheckPage() {
                         );
                       })}
                     </div>
+                    {/* 方案 B：当有真实竞品分数时，显示你的分数 vs 竞品分数对比 */}
+                    {categoryComp && categoryComp.competitor_score != null && (
+                      <div style={{
+                        marginTop: 20, padding: '16px 20px', borderRadius: 12,
+                        background: '#fafafa', border: '1px solid #e5e7eb',
+                      }}>
+                        <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 10px 0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                          {tk('competitorScoreCompare', 'AI Search Score Comparison')}
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                          <div style={{
+                            background: '#dbeafe', color: '#1e40af',
+                            fontSize: 14, fontWeight: 700, padding: '6px 14px', borderRadius: 8,
+                          }}>
+                            You: {results.score || 0}/100
+                          </div>
+                          <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: 600 }}>vs</span>
+                          <div style={{
+                            background: '#dcfce7', color: '#047857',
+                            fontSize: 14, fontWeight: 700, padding: '6px 14px', borderRadius: 8,
+                          }}>
+                            {categoryComp.name}: {categoryComp.competitor_score}/100
+                          </div>
+                          {categoryComp.competitor_verdict && (
+                            <span style={{ fontSize: 13, color: '#4b5563', marginLeft: 4 }}>
+                              — {categoryComp.competitor_verdict}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
