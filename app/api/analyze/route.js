@@ -104,10 +104,10 @@ function blurCompetitors(competitors) {
 async function findFreeTierCompetitor(productData) {
   try {
     const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('competitor lookup timeout')), 5000)
+      setTimeout(() => reject(new Error('competitor lookup timeout')), 10000)
     );
     const result = await Promise.race([
-      findCategoryCompetitor(productData),
+      findCategoryCompetitor(productData, url),
       timeout,
     ]);
     return result || null;
