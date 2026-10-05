@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { scrapeProductPage, isValidShopifyUrl, looksLikeProductPage, nonProductPageError } from '../../../lib/scraper';
 import { analyzeProduct } from '../../../lib/openai';
 import { recordEvent, domainFromUrl } from '../../../lib/analytics';
+import { findCategoryCompetitor } from '../../../lib/shopifyCompetitors';
 import { saveReport, getReport, unlockReport, updateApiUsage, getApiUsage, initDatabase, getActiveSubscription, getSubscriptionUsage, incrementSubscriptionUsage, isFoundingCustomer, enrollFoundingCustomer, countFoundingCustomers } from '../../../lib/db';
 
 // 强制使用 Node.js 运行时（非 Edge Runtime）
@@ -85,7 +86,7 @@ function generateFallbackAnalysis(productData, url) {
 }
 
 /**
- * 模糊化竞品名（免费版）
+ * 模糊化竞品名（免费版兜底，当无法识别真实竞品时使用）
  */
 function blurCompetitors(competitors) {
   if (!Array.isArray(competitors)) return [];
@@ -94,6 +95,26 @@ function blurCompetitors(competitors) {
     domain: 'competitor-store.com',
     why_they_win: c.why_they_win || '',
   }));
+}
+
+/**
+ * 为免费版查找同品类真实竞品（带超时保护，最多 5 秒）
+ * @returns {Promise<object|null>} { name, domain, category, category_label, verified }
+ */
+async function findFreeTierCompetitor(productData) {
+  try {
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('competitor lookup timeout')), 5000)
+    );
+    const result = await Promise.race([
+      findCategoryCompetitor(productData),
+      timeout,
+    ]);
+    return result || null;
+  } catch (e) {
+    console.warn('[Competitor] Lookup failed (non-critical):', e.message);
+    return null;
+  }
 }
 
 /**
@@ -261,11 +282,17 @@ export async function POST(request) {
       console.warn(`[Budget] WARNING: Approaching limit. $${cost.toFixed(2)} / $${monthlyBudget}`);
     }
 
-    // 调用 AI 分析
+    // 调用 AI 分析 + 同品类真实竞品查找（并行，节省时间）
     let analysisResult;
     let aiErrorInfo = null;
+    let categoryCompetitor = null;
     try {
-      analysisResult = await analyzeProduct(productData, url, lang || 'en');
+      const [aiRes, competitorRes] = await Promise.all([
+        analyzeProduct(productData, url, lang || 'en'),
+        findFreeTierCompetitor(productData),
+      ]);
+      analysisResult = aiRes;
+      categoryCompetitor = competitorRes;
     } catch (aiError) {
       console.error('AI analysis failed after all retries:', aiError.message);
       aiErrorInfo = aiError.message;
@@ -299,10 +326,26 @@ export async function POST(request) {
         verdict: analysisResult.verdict || null,
         buyer_queries: analysisResult.buyer_queries || null,
         query_match_scores: analysisResult.query_match_scores || null,
-        competitors: analysisResult.competitors || null,
         diagnosis: analysisResult.diagnosis || null,
         paid_fixes: analysisResult.paid_fixes || null,
         industry_benchmark: analysisResult.industry_benchmark || null,
+        // 把同品类竞品一并存入 competitors JSONB（带 category/verified 标记），免迁移 schema
+        competitors: (() => {
+          const aiComps = Array.isArray(analysisResult.competitors) ? analysisResult.competitors : [];
+          if (categoryCompetitor) {
+            return [
+              {
+                name: categoryCompetitor.name,
+                domain: categoryCompetitor.domain,
+                category: categoryCompetitor.category_label,
+                verified: categoryCompetitor.verified,
+                _category_competitor: true,
+              },
+              ...aiComps,
+            ];
+          }
+          return aiComps;
+        })(),
       });
       console.log('[DB] Report saved:', reportId);
     } catch (dbErr) {
@@ -334,6 +377,26 @@ export async function POST(request) {
     const firstFixUnlocked = allFixes.length > 0 ? [allFixes[0]] : [];
     const remainingTeasers = allFixes.length > 1 ? generateTeasers(allFixes.slice(1)) : [];
 
+    // 免费版响应：同品类真实竞品（如有）+ 其余位置用模糊占位
+    const freeCompetitors = (() => {
+      if (categoryCompetitor) {
+        const rest = Array.isArray(analysisResult.competitors) ? analysisResult.competitors : [];
+        const blurredFill = rest.slice(0, 2).map(c => ({
+          name: 'A well-known brand in this category',
+          domain: 'competitor-store.com',
+          why_they_win: c.why_they_win || '',
+        }));
+        return [{
+          name: categoryCompetitor.name,
+          domain: categoryCompetitor.domain,
+          category: categoryCompetitor.category_label,
+          verified: categoryCompetitor.verified,
+          why_they_win: 'Frequently recommended by AI for this category',
+        }].concat(blurredFill);
+      }
+      return blurCompetitors(analysisResult.competitors);
+    })();
+
     const responseData = {
       success: true,
       score: analysisResult.score,
@@ -343,7 +406,8 @@ export async function POST(request) {
       industry_benchmark: analysisResult.industry_benchmark,
       buyer_queries: analysisResult.buyer_queries,
       query_match_scores: analysisResult.query_match_scores,
-      competitors: blurCompetitors(analysisResult.competitors),
+      competitors: freeCompetitors,
+      category_competitor: categoryCompetitor,
       diagnosis: analysisResult.diagnosis,
       paid_fixes_unlocked: firstFixUnlocked,
       paid_fixes_teasers: remainingTeasers,
@@ -485,8 +549,28 @@ export async function GET(request) {
     baseResponse.paid_fixes = report.paid_fixes || [];
     baseResponse.overall_recommendations = report.full_report?.overall_recommendations || '';
   } else {
-    // 免费版：模糊竞品 + 完整解锁第 1 个 fix，其余变 teasers
-    baseResponse.competitors = blurCompetitors(report.competitors);
+    // 免费版：优先使用同品类真实竞品（已存入 competitors 并标记 _category_competitor）
+    const stored = Array.isArray(report.competitors) ? report.competitors : [];
+    const catComp = stored.find(c => c && c._category_competitor);
+    if (catComp) {
+      baseResponse.category_competitor = {
+        name: catComp.name, domain: catComp.domain,
+        category: catComp.category, category_label: catComp.category, verified: !!catComp.verified,
+      };
+      baseResponse.competitors = [{
+        name: catComp.name, domain: catComp.domain,
+        category: catComp.category, verified: !!catComp.verified,
+        why_they_win: 'Frequently recommended by AI for this category',
+      }].concat(
+        stored.filter(c => !c._category_competitor).slice(0, 2).map(c => ({
+          name: 'A well-known brand in this category',
+          domain: 'competitor-store.com',
+          why_they_win: c.why_they_win || '',
+        }))
+      );
+    } else {
+      baseResponse.competitors = blurCompetitors(stored);
+    }
     const storedFixes = Array.isArray(report.paid_fixes) ? report.paid_fixes : [];
     baseResponse.paid_fixes_unlocked = storedFixes.length > 0 ? [storedFixes[0]] : [];
     baseResponse.paid_fixes_teasers = storedFixes.length > 1 ? generateTeasers(storedFixes.slice(1)) : [];

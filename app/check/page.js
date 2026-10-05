@@ -381,6 +381,7 @@ export default function CheckPage() {
             buyer_queries: Array.isArray(data.buyer_queries) ? data.buyer_queries : [],
             query_match_scores: Array.isArray(data.query_match_scores) ? data.query_match_scores : [],
             competitors: Array.isArray(data.competitors) ? data.competitors : [],
+            category_competitor: data.category_competitor || null,
             diagnosis: Array.isArray(data.diagnosis) ? data.diagnosis : (Array.isArray(data.free_issues) ? data.free_issues : []),
             paid_fixes_teasers: Array.isArray(data.paid_fixes_teasers) ? data.paid_fixes_teasers : [],
             paid_fixes_unlocked: Array.isArray(data.paid_fixes_unlocked) ? data.paid_fixes_unlocked : [],
@@ -739,52 +740,87 @@ export default function CheckPage() {
                 </div>
               )}
 
-              {/* 4. 竞品对比（免费版模糊） */}
-              {competitors.length > 0 && (
-                <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
-                    {'🏆 ' + tk('competitorTitle', "Who's winning these searches")}
-                  </h2>
-                  <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>
-                    {tk('competitorSubtitle', 'Top competitors appearing in AI search results for your product type.')}
-                  </p>
-                  <div style={{ display: 'grid', gap: 12 }}>
-                    {competitors.map(function(comp, i) {
-                      var isBlurred = !isUnlocked && (comp.name === 'A well-known brand in this category' || comp.domain === 'competitor-store.com');
-                      return (
-                        <div key={i} style={{
-                          display: 'flex', alignItems: 'center', gap: 16,
-                          background: '#fafafa', borderRadius: 10, padding: '14px 16px',
-                          border: '1px solid #e5e7eb',
-                        }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{
-                                fontSize: 14, fontWeight: 600,
-                                color: isBlurred ? '#9ca3af' : '#1f2937',
-                                fontStyle: isBlurred ? 'italic' : 'normal',
-                              }}>
-                                {comp.name}
-                              </span>
-                              {isBlurred && <span style={{ fontSize: 16 }}>🔒</span>}
+              {/* 4. 竞品对比（免费版：同品类真实竞品 1 个 + 其余模糊化；付费版：全部真实） */}
+              {(() => {
+                var categoryComp = results && results.category_competitor;
+                var displayCompetitors = competitors;
+                // 免费版且未解锁：若后端已找到同品类真竞品，把它作为首个展示；其余位置用模糊占位
+                if (!isUnlocked && competitors.length > 0) {
+                  var hasReal = competitors.some(function(c) {
+                    return c.name !== 'A well-known brand in this category' && c.domain !== 'competitor-store.com';
+                  });
+                  if (!hasReal && categoryComp) {
+                    displayCompetitors = [{
+                      name: categoryComp.name,
+                      domain: categoryComp.domain,
+                      category: categoryComp.category_label,
+                      verified: categoryComp.verified,
+                      why_they_win: tk('realCompetitorWhy', 'Frequently recommended by AI for this category'),
+                    }].concat(competitors.slice(1));
+                  }
+                }
+                return displayCompetitors.length > 0 && (
+                  <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
+                    <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
+                      {'🏆 ' + tk('competitorTitle', "Who's winning these searches")}
+                    </h2>
+                    <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>
+                      {tk('competitorSubtitle', 'Top competitors appearing in AI search results for your product type.')}
+                    </p>
+                    <div style={{ display: 'grid', gap: 12 }}>
+                      {displayCompetitors.map(function(comp, i) {
+                        var isBlurred = !isUnlocked && (comp.name === 'A well-known brand in this category' || comp.domain === 'competitor-store.com');
+                        var isRealCategory = !isBlurred && !isUnlocked && comp.verified;
+                        return (
+                          <div key={i} style={{
+                            display: 'flex', alignItems: 'center', gap: 16,
+                            background: isRealCategory ? '#f0fdf4' : '#fafafa',
+                            borderRadius: 10, padding: '14px 16px',
+                            border: isRealCategory ? '1px solid #bbf7d0' : '1px solid #e5e7eb',
+                          }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                <span style={{
+                                  fontSize: 14, fontWeight: 600,
+                                  color: isBlurred ? '#9ca3af' : '#1f2937',
+                                  fontStyle: isBlurred ? 'italic' : 'normal',
+                                }}>
+                                  {isBlurred ? tk('competitorBlurredName', 'A well-known brand in this category') : comp.name}
+                                </span>
+                                {isRealCategory && (
+                                  <span style={{
+                                    fontSize: 10, fontWeight: 700, color: '#047857',
+                                    background: '#dcfce7', padding: '2px 8px', borderRadius: 999,
+                                    letterSpacing: 0.5,
+                                  }}>
+                                    ✓ {tk('realCompetitorTag', 'VERIFIED SHOPIFY STORE')}
+                                  </span>
+                                )}
+                                {isBlurred && <span style={{ fontSize: 16 }}>🔒</span>}
+                              </div>
+                              {comp.category && (
+                                <p style={{ fontSize: 11, color: '#6b7280', margin: '3px 0 0 0', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                  {comp.category}
+                                </p>
+                              )}
+                              {isBlurred && (
+                                <p style={{ fontSize: 12, color: '#9ca3af', margin: '2px 0 0 0', fontStyle: 'italic' }}>
+                                  {tk('competitorBlurredHint', 'Unlock to see the real competitor in your category')}
+                                </p>
+                              )}
+                              {comp.why_they_win && (
+                                <p style={{ fontSize: 13, color: '#4b5563', margin: '6px 0 0 0', lineHeight: 1.5 }}>
+                                  {comp.why_they_win}
+                                </p>
+                              )}
                             </div>
-                            {isBlurred && (
-                              <p style={{ fontSize: 12, color: '#9ca3af', margin: '2px 0 0 0', fontStyle: 'italic' }}>
-                                {tk('competitorBlurred', 'A well-known brand in this category')}
-                              </p>
-                            )}
-                            {comp.why_they_win && (
-                              <p style={{ fontSize: 13, color: '#4b5563', margin: '6px 0 0 0', lineHeight: 1.5 }}>
-                                {comp.why_they_win}
-                              </p>
-                            )}
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* 5. 诊断问题（免费版只给问题+影响，不给方案） */}
               {diagnosis.length > 0 && (
