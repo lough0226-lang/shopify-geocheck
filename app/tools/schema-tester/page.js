@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLang, PAGE_CONTENT } from '../../../lib/i18n';
-import Header from '../../../components/Header';
-import Footer from '../../../components/Footer';
 
 // ============ Score Ring Component ============
 function ScoreRing({ score }) {
