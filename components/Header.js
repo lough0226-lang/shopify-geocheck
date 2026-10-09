@@ -80,6 +80,9 @@ export default function Header() {
               <Link href="/blog" className="text-sm text-gray-600 hover:text-primary-700 transition-colors">
                 {t.blog}
               </Link>
+              <Link href="/tools" className="text-sm text-gray-600 hover:text-primary-700 transition-colors">
+                {t.tools}
+              </Link>
               <Link href="/my-reports" className="text-sm text-gray-600 hover:text-primary-700 transition-colors">
                 {t.myReports}
               </Link>
