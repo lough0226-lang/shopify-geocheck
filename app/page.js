@@ -4,7 +4,6 @@ import HeroSection from '../components/HeroSection';
 import HowItWorks from '../components/HowItWorks';
 import PricingSection from '../components/PricingSection';
 import FAQ from '../components/FAQ';
-import TestimonialsSection from '../components/TestimonialsSection';
 import Link from 'next/link';
 import { useLang, PAGE_CONTENT } from '../lib/i18n';
 
@@ -79,7 +78,6 @@ export default function HomePage() {
       </section>
 
       <PricingSection />
-      <TestimonialsSection />
       <FAQ />
 
       {/* 最终 CTA */}
