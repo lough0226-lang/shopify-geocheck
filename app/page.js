@@ -78,6 +78,7 @@ export default function HomePage() {
       </section>
 
       <PricingSection />
+      <TestimonialsSection />
       <FAQ />
 
       {/* 最终 CTA */}

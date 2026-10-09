@@ -158,6 +158,9 @@ export default function Header() {
               <Link href="/blog" className="text-gray-600 hover:text-primary-700 py-2" onClick={() => setMobileOpen(false)}>
                 {t.blog}
               </Link>
+              <Link href="/tools" className="text-gray-600 hover:text-primary-700 py-2" onClick={() => setMobileOpen(false)}>
+                {t.tools}
+              </Link>
               <Link href="/my-reports" className="text-gray-600 hover:text-primary-700 py-2" onClick={() => setMobileOpen(false)}>
                 {t.myReports}
               </Link>
