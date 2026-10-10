@@ -68,9 +68,13 @@ export default function MetaDescriptionPage() {
             <p className="text-lg text-gray-600">
               {p.metaSubtitle}
             </p>
+            <p className="text-sm text-gray-500 max-w-2xl mx-auto mt-2">
+              {p.metaOneLiner}
+            </p>
           </div>
 
           <form onSubmit={handleAnalyze} className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
+            <h2 className="text-base font-semibold text-gray-800 mb-3">{p.metaToolSectionTitle}</h2>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {p.metaInputLabel}
             </label>
@@ -158,6 +162,85 @@ export default function MetaDescriptionPage() {
               </div>
             </div>
           )}
+
+
+          {/* Educational Content Sections */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-10">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.metaWhatIsTitle}</h2>
+            <p className="text-sm text-gray-700 leading-relaxed">{p.metaWhatIsText}</p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.metaHowToTitle}</h2>
+            <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{p.metaHowToText}</div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.metaWhoForTitle}</h2>
+            <ul className="space-y-2">
+              {p.metaWhoForItems.split(',').map((item, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-indigo-500 mt-0.5 flex-shrink-0">•</span>
+                  <span>{item.trim()}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.metaBestTitle}</h2>
+            <ul className="space-y-2">
+              {p.metaBestItems.split(',').map((item, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-emerald-500 mt-0.5 flex-shrink-0">✓</span>
+                  <span>{item.trim()}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.metaMistakesTitle}</h2>
+            <ul className="space-y-2">
+              {p.metaMistakesItems.split(',').map((item, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-red-500 mt-0.5 flex-shrink-0">✗</span>
+                  <span>{item.trim()}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{p.metaFaqTitle}</h2>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.metaFaq1Q}</h3>
+                <p className="text-sm text-gray-700">{p.metaFaq1A}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.metaFaq2Q}</h3>
+                <p className="text-sm text-gray-700">{p.metaFaq2A}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.metaFaq3Q}</h3>
+                <p className="text-sm text-gray-700">{p.metaFaq3A}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.metaFaq4Q}</h3>
+                <p className="text-sm text-gray-700">{p.metaFaq4A}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.metaNextStepTitle}</h2>
+            <p className="text-sm text-gray-700 mb-4">{p.metaNextStepText}</p>
+            <div className="flex gap-3">
+              <Link href="/tools" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">View all tools →</Link>
+              <Link href="/tools/schema-tester" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">Schema Tester →</Link>
+            </div>
+          </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center mt-10">
             <p className="text-gray-700 mb-4">{p.metaCta}</p>

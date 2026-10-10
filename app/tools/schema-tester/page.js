@@ -130,8 +130,11 @@ export default function SchemaTesterPage() {
         <h1 style={{ fontSize: 36, fontWeight: 700, color: "#fff", marginBottom: 12 }}>
           {p.schemaTitle}
         </h1>
-        <p style={{ fontSize: 18, color: "#8bb5db", margin: 0 }}>
+        <p style={{ fontSize: 18, color: "#8bb5db", marginBottom: 8 }}>
           {p.schemaSubtitle}
+        </p>
+        <p style={{ fontSize: 14, color: "#a0c4e8", maxWidth: 600, margin: "0 auto" }}>
+          {p.schemaOneLiner}
         </p>
       </section>
 
@@ -274,7 +277,92 @@ export default function SchemaTesterPage() {
             </div>
           )}
 
-          {/* CTA */}
+
+          {/* Educational Content Sections */}
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, marginTop: 40, boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 12 }}>{p.schemaWhatIsTitle}</h2>
+            <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.7 }}>{p.schemaWhatIsText}</p>
+          </div>
+
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, marginTop: 24, boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 12 }}>{p.schemaHowToTitle}</h2>
+            <div style={{ fontSize: 14, color: "#374151", lineHeight: 1.7, whiteSpace: "pre-line" }}>{p.schemaHowToText}</div>
+          </div>
+
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, marginTop: 24, boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 12 }}>{p.schemaWhoForTitle}</h2>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {p.schemaWhoForItems.split(',').map(function(item, i) {
+                return (
+                  <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8, fontSize: 14, color: "#374151" }}>
+                    <span style={{ color: "#6366f1", flexShrink: 0 }}>{"•"}</span>
+                    <span>{item.trim()}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, marginTop: 24, boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 12 }}>{p.schemaBestTitle}</h2>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {p.schemaBestItems.split(',').map(function(item, i) {
+                return (
+                  <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8, fontSize: 14, color: "#374151" }}>
+                    <span style={{ color: "#10b981", flexShrink: 0 }}>{"✓"}</span>
+                    <span>{item.trim()}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, marginTop: 24, boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 12 }}>{p.schemaMistakesTitle}</h2>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {p.schemaMistakesItems.split(',').map(function(item, i) {
+                return (
+                  <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8, fontSize: 14, color: "#374151" }}>
+                    <span style={{ color: "#ef4444", flexShrink: 0 }}>{"✗"}</span>
+                    <span>{item.trim()}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, marginTop: 24, boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 16 }}>{p.schemaFaqTitle}</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 4 }}>{p.schemaFaq1Q}</h3>
+                <p style={{ fontSize: 14, color: "#374151", margin: 0 }}>{p.schemaFaq1A}</p>
+              </div>
+              <div>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 4 }}>{p.schemaFaq2Q}</h3>
+                <p style={{ fontSize: 14, color: "#374151", margin: 0 }}>{p.schemaFaq2A}</p>
+              </div>
+              <div>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 4 }}>{p.schemaFaq3Q}</h3>
+                <p style={{ fontSize: 14, color: "#374151", margin: 0 }}>{p.schemaFaq3A}</p>
+              </div>
+              <div>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 4 }}>{p.schemaFaq4Q}</h3>
+                <p style={{ fontSize: 14, color: "#374151", margin: 0 }}>{p.schemaFaq4A}</p>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, marginTop: 24, boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 12 }}>{p.schemaNextStepTitle}</h2>
+            <p style={{ fontSize: 14, color: "#374151", marginBottom: 16 }}>{p.schemaNextStepText}</p>
+            <div style={{ display: "flex", gap: 16 }}>
+              <Link href="/tools" style={{ color: "#6366f1", fontSize: 14, fontWeight: 500, textDecoration: "none" }}>View all tools {"→"}</Link>
+              <Link href="/tools/title-analyzer" style={{ color: "#6366f1", fontSize: 14, fontWeight: 500, textDecoration: "none" }}>Title Analyzer {"→"}</Link>
+            </div>
+          </div>
+
+                    {/* CTA */}
           <div style={{
             marginTop: 40, background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)",
             borderRadius: 16, padding: "32px 24px", textAlign: "center",

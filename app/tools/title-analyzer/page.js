@@ -91,6 +91,7 @@ export default function TitleAnalyzerPage() {
           <div className="text-center mb-10">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{p.titleAnalyzerTitle}</h1>
             <p className="text-lg text-gray-600">{p.titleAnalyzerSubtitle}</p>
+            <p className="text-sm text-gray-500 max-w-2xl mx-auto mt-2">{p.titleAnalyzerOneLiner}</p>
           </div>
 
           <form onSubmit={handleAnalyze} className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
@@ -160,6 +161,84 @@ export default function TitleAnalyzerPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-2">{p.titleAnalyzerUsageTitle}</h2>
             <p className="text-sm text-gray-600">{p.titleAnalyzerUsageDesc}</p>
           </div>
+          {/* Educational Content Sections */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.titleAnalyzerWhatIsTitle}</h2>
+            <p className="text-sm text-gray-700 leading-relaxed">{p.titleAnalyzerWhatIsText}</p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.titleAnalyzerHowToTitle}</h2>
+            <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{p.titleAnalyzerHowToText}</div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.titleAnalyzerWhoForTitle}</h2>
+            <ul className="space-y-2">
+              {p.titleAnalyzerWhoForItems.split(',').map((item, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-indigo-500 mt-0.5 flex-shrink-0">{"•"}</span>
+                  <span>{item.trim()}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.titleAnalyzerBestTitle}</h2>
+            <ul className="space-y-2">
+              {p.titleAnalyzerBestItems.split(',').map((item, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-emerald-500 mt-0.5 flex-shrink-0">{"✓"}</span>
+                  <span>{item.trim()}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.titleAnalyzerMistakesTitle}</h2>
+            <ul className="space-y-2">
+              {p.titleAnalyzerMistakesItems.split(',').map((item, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-red-500 mt-0.5 flex-shrink-0">{"✗"}</span>
+                  <span>{item.trim()}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{p.titleAnalyzerFaqTitle}</h2>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.titleAnalyzerFaq1Q}</h3>
+                <p className="text-sm text-gray-700">{p.titleAnalyzerFaq1A}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.titleAnalyzerFaq2Q}</h3>
+                <p className="text-sm text-gray-700">{p.titleAnalyzerFaq2A}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.titleAnalyzerFaq3Q}</h3>
+                <p className="text-sm text-gray-700">{p.titleAnalyzerFaq3A}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.titleAnalyzerFaq4Q}</h3>
+                <p className="text-sm text-gray-700">{p.titleAnalyzerFaq4A}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.titleAnalyzerNextStepTitle}</h2>
+            <p className="text-sm text-gray-700 mb-4">{p.titleAnalyzerNextStepText}</p>
+            <div className="flex gap-3">
+              <Link href="/tools" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">View all tools {"→"}</Link>
+              <Link href="/tools/schema-tester" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">Schema Tester {"→"}</Link>
+            </div>
+          </div>
+
         </div>
       </main>
           </>
