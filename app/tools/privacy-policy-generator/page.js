@@ -3,8 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useLang, PAGE_CONTENT } from '../../../lib/i18n';
-import Header from '../../../components/Header';
-import Footer from '../../../components/Footer';
 
 export default function PrivacyPolicyPage() {
   const lang = useLang();
@@ -105,8 +103,7 @@ If you have any questions about this Privacy Policy, please contact us at ${mail
 
   return (
     <>
-      <Header />
-      <main className="bg-gray-50 min-h-screen">
+            <main className="bg-gray-50 min-h-screen">
         <div className="max-w-3xl mx-auto px-4 py-16">
           <div className="text-center mb-10">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{p.privacyPolicyTitle}</h1>
@@ -163,7 +160,6 @@ If you have any questions about this Privacy Policy, please contact us at ${mail
           </div>
         </div>
       </main>
-      <Footer />
-    </>
+          </>
   );
 }

@@ -3,8 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useLang, PAGE_CONTENT } from '../../../lib/i18n';
-import Header from '../../../components/Header';
-import Footer from '../../../components/Footer';
 
 export default function OgImageGeneratorPage() {
   const lang = useLang();
@@ -85,8 +83,7 @@ export default function OgImageGeneratorPage() {
 
   return (
     <>
-      <Header />
-      <main className="bg-gray-50 min-h-screen">
+            <main className="bg-gray-50 min-h-screen">
         <div className="max-w-3xl mx-auto px-4 py-16">
           <div className="text-center mb-10">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{p.ogImageTitle}</h1>
@@ -141,7 +138,6 @@ export default function OgImageGeneratorPage() {
           </div>
         </div>
       </main>
-      <Footer />
-    </>
+          </>
   );
 }
