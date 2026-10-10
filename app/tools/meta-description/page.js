@@ -60,19 +60,23 @@ export default function MetaDescriptionPage() {
   return (
     <>
             <main className="bg-gray-50 min-h-screen">
-        <div className="max-w-3xl mx-auto px-4 py-16">
-          <div className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-              {p.metaTitle}
-            </h1>
-            <p className="text-lg text-gray-600">
-              {p.metaSubtitle}
-            </p>
-            <p className="text-sm text-gray-500 max-w-2xl mx-auto mt-2">
-              {p.metaOneLiner}
-            </p>
-          </div>
+      {/* Hero */}
+      <section style={{
+        background: "#1e3a5f", padding: "48px 16px", textAlign: "center", position: "relative",
+      }}>
+        <h1 style={{ fontSize: 36, fontWeight: 700, color: "#fff", marginBottom: 12 }}>
+          {p.metaTitle}
+        </h1>
+        <p style={{ fontSize: 18, color: "#8bb5db", marginBottom: 8 }}>
+          {p.metaSubtitle}
+        </p>
+        <p style={{ fontSize: 14, color: "#a0c4e8", maxWidth: 600, margin: "0 auto" }}>
+          {p.metaOneLiner}
+        </p>
+      </section>
 
+      <div className="max-w-3xl mx-auto px-4 py-12">
+          {/* Form */}
           <form onSubmit={handleAnalyze} className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
             <h2 className="text-base font-semibold text-gray-800 mb-3">{p.metaToolSectionTitle}</h2>
             <label className="block text-sm font-medium text-gray-700 mb-2">

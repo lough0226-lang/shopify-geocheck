@@ -150,13 +150,6 @@ export default function TitleAnalyzerPage() {
             </div>
           )}
 
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center mt-10">
-            <p className="text-gray-700 mb-4">{p.titleAnalyzerCta}</p>
-            <Link href="/check" className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
-              {p.titleAnalyzerCtaBtn}
-            </Link>
-          </div>
-
           <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">{p.titleAnalyzerUsageTitle}</h2>
             <p className="text-sm text-gray-600">{p.titleAnalyzerUsageDesc}</p>
@@ -239,6 +232,13 @@ export default function TitleAnalyzerPage() {
             </div>
           </div>
 
+          {/* CTA */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center mt-10">
+            <p className="text-gray-700 mb-4">{p.titleAnalyzerCta}</p>
+            <Link href="/check" className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
+              {p.titleAnalyzerCtaBtn}
+            </Link>
+          </div>
         </div>
       </main>
           </>
