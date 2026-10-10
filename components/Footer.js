@@ -41,15 +41,15 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-3 text-sm">{p.footerTools}</h4>
             <nav className="flex flex-col gap-2 text-sm text-primary-300">
-              <Link href="/tools/meta-description" className="hover:text-white transition-colors">Meta Description Generator</Link>
-              <Link href="/tools/schema-tester" className="hover:text-white transition-colors">Schema Markup Tester</Link>
-              <Link href="/tools/title-analyzer" className="hover:text-white transition-colors">Title Tag Analyzer</Link>
-              <Link href="/tools/bg-remover" className="hover:text-white transition-colors">Background Remover</Link>
-              <Link href="/tools/og-image-generator" className="hover:text-white transition-colors">OG Image Generator</Link>
-              <Link href="/tools/alt-text-generator" className="hover:text-white transition-colors">Alt Text Generator</Link>
-              <Link href="/tools/profit-calculator" className="hover:text-white transition-colors">Profit Margin Calculator</Link>
-              <Link href="/tools/discount-calculator" className="hover:text-white transition-colors">Discount Calculator</Link>
-              <Link href="/tools/cookie-banner" className="hover:text-white transition-colors">Cookie Banner Generator</Link>
+              <Link href="/tools/meta-description" className="hover:text-white transition-colors">Shopify Meta Description Generator</Link>
+              <Link href="/tools/schema-tester" className="hover:text-white transition-colors">Shopify Schema Markup Tester</Link>
+              <Link href="/tools/title-analyzer" className="hover:text-white transition-colors">Shopify Title Tag Analyzer</Link>
+              <Link href="/tools/bg-remover" className="hover:text-white transition-colors">Shopify Background Remover</Link>
+              <Link href="/tools/og-image-generator" className="hover:text-white transition-colors">Shopify OG Image Generator</Link>
+              <Link href="/tools/alt-text-generator" className="hover:text-white transition-colors">Shopify Alt Text Generator</Link>
+              <Link href="/tools/profit-calculator" className="hover:text-white transition-colors">Shopify Profit Margin Calculator</Link>
+              <Link href="/tools/discount-calculator" className="hover:text-white transition-colors">Shopify Discount Calculator</Link>
+              <Link href="/tools/cookie-banner" className="hover:text-white transition-colors">Shopify Cookie Banner Generator</Link>
               <Link href="/tools" className="hover:text-white transition-colors font-medium">{p.footerViewAllTools}</Link>
             </nav>
           </div>
