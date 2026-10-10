@@ -168,7 +168,7 @@ export default function TitleAnalyzerPage() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.titleAnalyzerWhoForTitle}</h2>
             <ul className="space-y-2">
-              {p.titleAnalyzerWhoForItems.split(',').map((item, i) => (
+              {p.titleAnalyzerWhoForItems.split('|||').map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
                   <span className="text-indigo-500 mt-0.5 flex-shrink-0">{"•"}</span>
                   <span>{item.trim()}</span>
@@ -180,7 +180,7 @@ export default function TitleAnalyzerPage() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.titleAnalyzerBestTitle}</h2>
             <ul className="space-y-2">
-              {p.titleAnalyzerBestItems.split(',').map((item, i) => (
+              {p.titleAnalyzerBestItems.split('|||').map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
                   <span className="text-emerald-500 mt-0.5 flex-shrink-0">{"✓"}</span>
                   <span>{item.trim()}</span>
@@ -192,7 +192,7 @@ export default function TitleAnalyzerPage() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.titleAnalyzerMistakesTitle}</h2>
             <ul className="space-y-2">
-              {p.titleAnalyzerMistakesItems.split(',').map((item, i) => (
+              {p.titleAnalyzerMistakesItems.split('|||').map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
                   <span className="text-red-500 mt-0.5 flex-shrink-0">{"✗"}</span>
                   <span>{item.trim()}</span>

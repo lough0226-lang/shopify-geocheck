@@ -292,7 +292,7 @@ export default function SchemaTesterPage() {
           <div style={{ background: "#fff", borderRadius: 16, padding: 24, marginTop: 24, boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 12 }}>{p.schemaWhoForTitle}</h2>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {p.schemaWhoForItems.split(',').map(function(item, i) {
+              {p.schemaWhoForItems.split('|||').map(function(item, i) {
                 return (
                   <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8, fontSize: 14, color: "#374151" }}>
                     <span style={{ color: "#6366f1", flexShrink: 0 }}>{"•"}</span>
@@ -306,7 +306,7 @@ export default function SchemaTesterPage() {
           <div style={{ background: "#fff", borderRadius: 16, padding: 24, marginTop: 24, boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 12 }}>{p.schemaBestTitle}</h2>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {p.schemaBestItems.split(',').map(function(item, i) {
+              {p.schemaBestItems.split('|||').map(function(item, i) {
                 return (
                   <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8, fontSize: 14, color: "#374151" }}>
                     <span style={{ color: "#10b981", flexShrink: 0 }}>{"✓"}</span>
@@ -320,7 +320,7 @@ export default function SchemaTesterPage() {
           <div style={{ background: "#fff", borderRadius: 16, padding: 24, marginTop: 24, boxShadow: "0 1px 3px 0 rgba(0,0,0,0.1)" }}>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 12 }}>{p.schemaMistakesTitle}</h2>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {p.schemaMistakesItems.split(',').map(function(item, i) {
+              {p.schemaMistakesItems.split('|||').map(function(item, i) {
                 return (
                   <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8, fontSize: 14, color: "#374151" }}>
                     <span style={{ color: "#ef4444", flexShrink: 0 }}>{"✗"}</span>

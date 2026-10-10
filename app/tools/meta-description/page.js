@@ -182,7 +182,7 @@ export default function MetaDescriptionPage() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.metaWhoForTitle}</h2>
             <ul className="space-y-2">
-              {p.metaWhoForItems.split(',').map((item, i) => (
+              {p.metaWhoForItems.split('|||').map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
                   <span className="text-indigo-500 mt-0.5 flex-shrink-0">•</span>
                   <span>{item.trim()}</span>
@@ -194,7 +194,7 @@ export default function MetaDescriptionPage() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.metaBestTitle}</h2>
             <ul className="space-y-2">
-              {p.metaBestItems.split(',').map((item, i) => (
+              {p.metaBestItems.split('|||').map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
                   <span className="text-emerald-500 mt-0.5 flex-shrink-0">✓</span>
                   <span>{item.trim()}</span>
@@ -206,7 +206,7 @@ export default function MetaDescriptionPage() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">{p.metaMistakesTitle}</h2>
             <ul className="space-y-2">
-              {p.metaMistakesItems.split(',').map((item, i) => (
+              {p.metaMistakesItems.split('|||').map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
                   <span className="text-red-500 mt-0.5 flex-shrink-0">✗</span>
                   <span>{item.trim()}</span>
