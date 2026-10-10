@@ -5,10 +5,10 @@ import Footer from '../components/Footer';
 export const metadata = {
   metadataBase: new URL('https://mygeocheck.com'),
   title: {
-    default: 'Shopify GEO Check - AI Search Visibility Analyzer | Free GEO Audit',
+    default: 'Shopify GEO Check - AI Search Visibility for Shopify Products',
     template: '%s | My GEO Check',
   },
-  description: 'Check if your Shopify products are visible to AI search engines like ChatGPT, Perplexity, and Google AI Overviews. Free instant analysis with actionable GEO optimization tips.',
+  description: 'Check if your Shopify products are visible to AI search engines like ChatGPT and Google AI Overviews. Free instant GEO analysis.',
   keywords: 'GEO, generative engine optimization, AI search visibility, Shopify SEO, ChatGPT shopping, Perplexity, Google AI Overviews, GEO check, AI search optimization',
   authors: [{ name: 'Luo Xin' }],
   robots: 'index, follow',
