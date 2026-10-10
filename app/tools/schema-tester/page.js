@@ -168,7 +168,7 @@ export default function SchemaTesterPage() {
                   opacity: loading ? 0.5 : 1, whiteSpace: "nowrap",
                 }}
               >
-                {loading ? (lang === "zh" ? "检测中...") : p.schemaAnalyzeBtn}
+                {loading ? (lang === "zh" ? "检测中..." : "Checking...") : p.schemaAnalyzeBtn}
               </button>
             </div>
 
