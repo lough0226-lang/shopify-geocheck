@@ -198,7 +198,7 @@ export default function SchemaTesterPage() {
                   </h2>
                   <ScoreRing score={result.score} />
                   <p style={{ marginTop: 16, fontSize: 14, color: "#6b7280" }}>
-                    {p.schemaType}: <strong>{resulp.schemaType}</strong>
+                    {p.schemaType}: <strong>{result.schemaType}</strong>
                   </p>
                 </div>
               )}
