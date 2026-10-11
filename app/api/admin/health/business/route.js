@@ -38,8 +38,18 @@ function getDBPool() {
 }
 
 // ========== Creem API ==========
+async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchCreemTransactions(apiKey) {
-  const res = await fetch('https://api.creem.io/v1/transactions', {
+  const res = await fetchWithTimeout('https://api.creem.io/v1/transactions', {
     headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
   });
   if (!res.ok) {
@@ -50,7 +60,7 @@ async function fetchCreemTransactions(apiKey) {
 }
 
 async function fetchCreemSubscriptions(apiKey) {
-  const res = await fetch('https://api.creem.io/v1/subscriptions/search', {
+  const res = await fetchWithTimeout('https://api.creem.io/v1/subscriptions/search', {
     method: 'POST',
     headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({}),
@@ -247,22 +257,24 @@ export async function GET(request) {
       if (txnResult.status === 'fulfilled') {
         creemTransactions = txnResult.value?.transactions || txnResult.value?.data || txnResult.value || [];
       } else {
-        console.error('[BusinessHealth] Creem transactions fetch failed:', txnResult.reason?.message);
+        const reason = txnResult.reason?.name === 'AbortError' ? 'timeout (10s)' : txnResult.reason?.message;
+        console.error('[BusinessHealth] Creem transactions fetch failed:', reason);
         results.reconciliation_issues.push({
           type: 'api_error',
           severity: 'medium',
-          description: `Creem transactions API failed: ${txnResult.reason?.message}`,
+          description: `Creem transactions API failed: ${reason}`,
         });
       }
 
       if (subResult.status === 'fulfilled') {
         creemSubscriptions = subResult.value;
       } else {
-        console.error('[BusinessHealth] Creem subscriptions fetch failed:', subResult.reason?.message);
+        const reason = subResult.reason?.name === 'AbortError' ? 'timeout (10s)' : subResult.reason?.message;
+        console.error('[BusinessHealth] Creem subscriptions fetch failed:', reason);
         results.subscription_alerts.push({
           type: 'api_error',
           severity: 'medium',
-          description: `Creem subscriptions API failed: ${subResult.reason?.message}`,
+          description: `Creem subscriptions API failed: ${reason}`,
         });
       }
     } else {
