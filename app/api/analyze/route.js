@@ -29,6 +29,80 @@ async function ensureDbReady() {
   }
 }
 
+// ============ 安全：统一 JSON 响应（不缓存 + 不索引 + 不泄露来源） ============
+const SECURITY_JSON_HEADERS = {
+  'Cache-Control': 'private, no-store',
+  'X-Robots-Tag': 'noindex, nofollow',
+  'Referrer-Policy': 'no-referrer',
+};
+
+function jsonResponse(data, init) {
+  const mergedInit = init || {};
+  mergedInit.headers = {
+    ...SECURITY_JSON_HEADERS,
+    ...(mergedInit.headers || {}),
+  };
+  return NextResponse.json(data, mergedInit);
+}
+
+// ============ 进程内固定窗口限流（serverless 多实例下尽力而为的第一道闸门；
+// 全局月度预算 MONTHLY_API_BUDGET 仍是兜底） ============
+// 结构: Map<ip, { minute: {start, count}, hour: {start, count}, day: {start, count} }>
+const rateBuckets = new Map();
+const RATE_LIMITS = [
+  { key: 'minute', windowMs: 60 * 1000, max: 3 },
+  { key: 'hour', windowMs: 60 * 60 * 1000, max: 10 },
+  { key: 'day', windowMs: 24 * 60 * 60 * 1000, max: 20 },
+];
+let lastRateCleanup = 0;
+
+function getClientIp(request) {
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) {
+    const first = xff.split(',')[0].trim();
+    if (first) return first;
+  }
+  const real = request.headers.get('x-real-ip');
+  if (real && real.trim()) return real.trim();
+  return 'unknown';
+}
+
+/**
+ * 计数并判断是否超限；超限时返回 true。惰性清理过期 IP 窗口。
+ */
+function isRateLimited(ip, now) {
+  now = now || Date.now();
+
+  // 每 5 分钟顺带清理一次整表，防止 Map 无限增长
+  if (now - lastRateCleanup > 5 * 60 * 1000) {
+    lastRateCleanup = now;
+    for (const [bucketIp, buckets] of rateBuckets) {
+      const stale = RATE_LIMITS.every((limit) => {
+        const b = buckets[limit.key];
+        return !b || now - b.start >= limit.windowMs;
+      });
+      if (stale) rateBuckets.delete(bucketIp);
+    }
+  }
+
+  let buckets = rateBuckets.get(ip);
+  if (!buckets) {
+    buckets = {};
+    rateBuckets.set(ip, buckets);
+  }
+
+  for (const limit of RATE_LIMITS) {
+    let bucket = buckets[limit.key];
+    if (!bucket || now - bucket.start >= limit.windowMs) {
+      bucket = { start: now, count: 0 };
+      buckets[limit.key] = bucket;
+    }
+    bucket.count += 1;
+    if (bucket.count > limit.max) return true;
+  }
+  return false;
+}
+
 /**
  * 生成降级结果（AI 分析完全失败时使用）
  */
@@ -168,12 +242,27 @@ export async function POST(request) {
   try {
     await ensureDbReady();
 
-    const { url, lang, email, join_founding, founding_agreements } = await request.json();
+    const { url, lang, email, join_founding, founding_agreements, company_website } = await request.json();
+
+    // 蜜罐：正常用户表单中该字段不可见，任何非空值都来自自动填表机器人，直接拒绝
+    if (typeof company_website === 'string' && company_website.trim() !== '') {
+      return jsonResponse({ error: 'Invalid request' }, { status: 400 });
+    }
 
     if (!url || typeof url !== 'string') {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Please provide a valid URL' },
         { status: 400 }
+      );
+    }
+
+    // 进程内限流：按客户端 IP，3 次/分钟、10 次/小时、20 次/天
+    // serverless 多实例下是尽力而为的第一道闸门，MONTHLY_API_BUDGET 仍是兜底
+    const clientIp = getClientIp(request);
+    if (isRateLimited(clientIp)) {
+      return jsonResponse(
+        { error: 'Too many requests. Please wait a bit before running another check.' },
+        { status: 429 }
       );
     }
 
@@ -184,9 +273,9 @@ export async function POST(request) {
       lang: lang || 'en',
     });
 
-    if (!isValidShopifyUrl(url)) {
+    if (!(await isValidShopifyUrl(url))) {
       const np = nonProductPageError();
-      return NextResponse.json(
+      return jsonResponse(
         {
           error: np.message,
           error_type: 'NOT_PRODUCT_PAGE',
@@ -208,7 +297,7 @@ export async function POST(request) {
         if (subscription && subscription.plan_type === 'monthly') {
           monthlyUsed = await getSubscriptionUsage(customerEmail);
           if (monthlyUsed >= 5) {
-            return NextResponse.json({
+            return jsonResponse({
               success: true,
               score: 0,
               product_name: '',
@@ -233,7 +322,7 @@ export async function POST(request) {
       productData = await scrapeProductPage(url);
     } catch (scrapeError) {
       console.error('Scraping failed:', scrapeError.message);
-      return NextResponse.json(
+      return jsonResponse(
         {
           error: scrapeError.message || 'Could not access the product page.',
           error_type: scrapeError.errorType || 'GENERIC',
@@ -250,7 +339,7 @@ export async function POST(request) {
       console.warn('[Scrape] Content is not a product page:', url, JSON.stringify(productData?.title || ''));
       recordEvent('analysis_not_product', { domain: domainFromUrl(url), lang: lang || 'en' });
       const np = nonProductPageError();
-      return NextResponse.json(
+      return jsonResponse(
         {
           error: np.message,
           error_type: np.errorType,
@@ -274,7 +363,7 @@ export async function POST(request) {
     const cost = parseFloat(apiUsage.estimated_cost) || 0;
 
     if (cost >= monthlyBudget) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Service temporarily unavailable due to high demand. Please try again next month.' },
         { status: 503 }
       );
@@ -487,11 +576,11 @@ export async function POST(request) {
       const freshUsage = await getApiUsage().catch(() => ({ call_count: 0, estimated_cost: 0 }));
       responseData._api_usage = freshUsage;
     }
-    return NextResponse.json(responseData);
+    return jsonResponse(responseData);
   } catch (error) {
     console.error('Analysis API error:', error);
-    return NextResponse.json(
-      { 
+    return jsonResponse(
+      {
         error: 'Something went wrong. Please try again.',
         debug: error.message || 'unknown error',
       },
@@ -510,7 +599,7 @@ export async function GET(request) {
   const email = searchParams.get('email');
 
   if (!reportId) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Report ID is required' },
       { status: 400 }
     );
@@ -524,7 +613,7 @@ export async function GET(request) {
   }
 
   if (!report) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Report not found or has expired. Please run a new analysis.' },
       { status: 404 }
     );
@@ -599,5 +688,5 @@ export async function GET(request) {
     baseResponse.paid_value_prop = 'Unlock specific fix instructions, competitor names, schema code snippets, and multi-platform analysis (ChatGPT + Perplexity + Google AI)';
   }
 
-  return NextResponse.json(baseResponse);
+  return jsonResponse(baseResponse);
 }

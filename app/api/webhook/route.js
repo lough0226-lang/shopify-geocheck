@@ -25,18 +25,29 @@ export async function POST(request) {
   try {
     const rawBody = await request.text();
     const signature = request.headers.get('creem-signature');
+    // 安全加固：生产环境必须配置 CREEM_WEBHOOK_SECRET 且签名校验通过，
+    // 防止未配置密钥时任何人伪造 checkout.completed 事件解锁任意报告。
     const webhookSecret = process.env.CREEM_WEBHOOK_SECRET;
 
-    // Verify webhook signature
-    if (webhookSecret && signature) {
-      const hmac = crypto.createHmac('sha256', webhookSecret);
-      hmac.update(rawBody);
-      if (signature !== hmac.digest('hex')) {
+    if (!webhookSecret) {
+      // 生产环境缺少密钥属于配置事故：拒绝处理，宁可漏处理真实回调也不放行伪造请求
+      if (process.env.NODE_ENV === 'production') {
+        console.error('CREEM_WEBHOOK_SECRET is not configured; rejecting webhook');
+        return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 });
+      }
+      // 仅本地开发允许无密钥调试（Zeabur 上 NODE_ENV=production，不受影响）
+      console.warn('Webhook signature skipped: CREEM_WEBHOOK_SECRET not set in non-production');
+    } else if (!signature) {
+      return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+    } else {
+      const expected = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
+      // 等时比较，避免时序侧信道
+      const sigBuf = Buffer.from(String(signature));
+      const expBuf = Buffer.from(expected);
+      if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
         console.error('Webhook signature mismatch');
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
-    } else if (webhookSecret && !signature) {
-      return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
     }
 
     const event = JSON.parse(rawBody);

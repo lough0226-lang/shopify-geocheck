@@ -22,7 +22,7 @@ export default function TestimonialsSection() {
               );
             })}
           </div>
-          <p className="text-sm text-gray-500 font-medium">Trusted by Shopify stores worldwide</p>
+          <p className="text-sm text-gray-500 font-medium">Feedback from Shopify stores</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mt-10">

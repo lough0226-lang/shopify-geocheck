@@ -210,6 +210,8 @@ export default function CheckPage() {
   var [joinFounding, setJoinFounding] = useState(false);
   var [foundingEmail, setFoundingEmail] = useState('');
   var analysisIdRef = useRef(0);
+  // 蜜罐输入（机器人诱饵，正常用户不可见）
+  var companyWebsiteRef = useRef(null);
 
   // Pre-fill URL from query parameter (e.g., from hero input) and auto-start
   useEffect(function() {
@@ -324,6 +326,10 @@ export default function CheckPage() {
     // 封装分析请求函数（支持自动重试）
     function runAnalysis() {
       var payload = { url: inputUrl, lang: lang };
+      // 蜜罐值随请求发送；正常用户该字段始终为空
+      if (companyWebsiteRef.current && companyWebsiteRef.current.value) {
+        payload.company_website = companyWebsiteRef.current.value;
+      }
       if (joinFounding) {
         var fEmail = (foundingEmail || '').trim();
         if (fEmail && fEmail.indexOf('@') !== -1) {
@@ -583,6 +589,19 @@ export default function CheckPage() {
       <section style={{ padding: '48px 16px' }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
           <form onSubmit={handleAnalyze} style={{ background: '#fff', borderRadius: 16, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', padding: 32 }}>
+            {/* Honeypot：对真实用户不可见，自动填表机器人会填写此字段，后端直接拒绝 */}
+            <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: 1, height: 1, overflow: 'hidden', opacity: 0 }}>
+              <label htmlFor="company_website">Leave this field empty</label>
+              <input
+                type="text"
+                id="company_website"
+                name="company_website"
+                tabIndex={-1}
+                autoComplete="off"
+                ref={companyWebsiteRef}
+                defaultValue=""
+              />
+            </div>
             <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 8 }}>
               {t.inputLabel}
             </label>

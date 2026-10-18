@@ -9,7 +9,7 @@ export default function TermsPage() {
     <div style={{ minHeight: '80vh', background: '#f9fafb' }}>
       <div style={{ background: '#1e3a5f', padding: '40px 16px', textAlign: 'center' }}>
         <h1 style={{ fontSize: 32, fontWeight: 700, color: '#fff', margin: 0 }}>Terms of Service</h1>
-        <p style={{ color: '#8bb5db', marginTop: 8, fontSize: 14 }}>Last updated: August 25, 2026</p>
+        <p style={{ color: '#8bb5db', marginTop: 8, fontSize: 14 }}>Last updated: October 15, 2026</p>
       </div>
 
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 16px' }}>
@@ -29,21 +29,29 @@ export default function TermsPage() {
             </ul>
             <p>The free analysis is provided &quot;as is&quot; for informational purposes.</p>
 
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>3. Paid Subscription</h2>
-            <p>The full GEO Visibility Report is provided as a monthly subscription priced at $29.00 USD per month, processed through Creem.io. An active subscription provides:</p>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>3. Paid Plans</h2>
+            <p>Full GEO Visibility Reports are offered as two paid options, processed through Creem.io:</p>
             <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-              <li>Complete analysis with all 22+ GEO checkpoints on every report</li>
+              <li><strong>One-time report ($19.00 USD):</strong> one complete GEO Visibility Report for a single product URL, with a single payment and no recurring charges.</li>
+              <li><strong>Monthly subscription ($29.00 USD/month):</strong> includes 5 complete reports per month. Any reports beyond those 5 are billed at $9.00 USD per report.</li>
+            </ul>
+            <p>Every paid report (both one-time and subscription) includes:</p>
+            <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
+              <li>Complete analysis with all 22+ GEO checkpoints</li>
               <li>Detailed fix recommendations</li>
               <li>Quick wins and strategic recommendations</li>
               <li>Priority-ranked action items</li>
-              <li>Unlimited re-checks and full reports for any number of products while the subscription is active</li>
+              <li>4 automatic re-scans of the same product URL (on Day 2, Day 7, Day 14 and Day 30 after purchase), with email alerts when your visibility score changes</li>
             </ul>
-            <p><strong>Billing and renewal:</strong> The subscription renews automatically each month at $29.00 USD until cancelled. You can cancel at any time, self-service, in the Creem customer billing portal (via the &quot;Manage Subscription&quot; link on your payment confirmation page or in your report email). After cancelling, you keep full access until the end of the current billing period and you will not be charged again.</p>
+            <p>The automatic re-scans run on the four fixed schedules above; the Service does not provide continuous or 24/7 monitoring.</p>
+            <p><strong>Billing and renewal:</strong> The subscription renews automatically each month at $29.00 USD until cancelled. You can cancel at any time, self-service, in the Creem customer billing portal (via the &quot;Manage Subscription&quot; link on your payment confirmation page or in your report email). After cancelling, you keep full access until the end of the current billing period; you will not be charged again and the subscription will not renew automatically.</p>
 
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>4. Payment &amp; Refunds</h2>
             <p>Payments are processed through Creem.io. By making a purchase, you agree to Creem.io&apos;s terms.</p>
             <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-              <li><strong>Refund policy:</strong> Due to the digital nature of the product, all sales are final once the report is delivered. However, if you experience technical issues receiving your report, contact us at hello@mygeocheck.com within 7 days of purchase.</li>
+              <li><strong>7-day money-back guarantee:</strong> Within 7 days of purchase, you can request a full refund by emailing hello@mygeocheck.com. This guarantee applies both to the one-time report ($19.00 USD) and to the first payment of a monthly subscription ($29.00 USD). We will refund the full amount you paid.</li>
+              <li><strong>Cancellation:</strong> Subscriptions can be cancelled at any time in the Creem customer billing portal. After cancellation you can continue using the Service until the end of the current billing period, after which no further charges will be made and the subscription will not renew.</li>
+              <li><strong>Technical issues:</strong> If you experience technical problems and cannot receive your report, contact us at hello@mygeocheck.com and we will help you access it or, if the problem cannot be resolved, arrange a refund under the 7-day guarantee above.</li>
               <li><strong>Disputes:</strong> If you believe there was an error in your charge, please contact us first before initiating a chargeback.</li>
             </ul>
 
