@@ -36,7 +36,7 @@ Output ONLY the product description text, no labels or headers.`;
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'qwen-turbo',
+        model: 'qwen-flash',
         messages: [{ role: 'user', content: prompt }],
       }),
     });

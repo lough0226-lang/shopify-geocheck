@@ -43,7 +43,7 @@ Then, after a line "---SCHEMA---", output ONLY the valid JSON-LD FAQ schema code
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'qwen-turbo',
+        model: 'qwen-flash',
         messages: [{ role: 'user', content: prompt }],
       }),
     });

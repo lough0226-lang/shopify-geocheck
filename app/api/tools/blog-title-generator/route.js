@@ -36,7 +36,7 @@ Output format: Return ONLY a numbered list (1. 2. 3. etc.) with one title per li
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'qwen-turbo',
+        model: 'qwen-flash',
         messages: [{ role: 'user', content: prompt }],
       }),
     });
