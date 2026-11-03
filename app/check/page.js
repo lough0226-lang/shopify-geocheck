@@ -99,24 +99,43 @@ class ErrorBoundary extends Component {
 }
 
 // ============ Inline Loading Component ============
-function LoadingView({ text }) {
-  var COUNTDOWN = 10;
-  var [countdown, setCountdown] = useState(COUNTDOWN);
-  var [progress, setProgress] = useState(0);
+// 2026-11-03：原来是 10 秒假倒计时。倒计时归零后仍在转圈，用户会判定"卡死"并刷新，
+// 而刷新会让前面的等待白费。改成按真实阶段推进的文字 + 渐近进度条，超时给安抚文案。
+function LoadingView({ text, lang }) {
+  var STAGES = {
+    en: [
+      'Fetching the product page…',
+      'Reading structured data and pricing…',
+      'Testing 7 buyer questions…',
+      'Scoring and writing your report…',
+    ],
+    zh: [
+      '正在读取商品页面…',
+      '正在解析结构化数据与价格…',
+      '正在测试 7 类买家问题…',
+      '正在评分并生成报告…',
+    ],
+  };
+  var stages = STAGES[lang] || STAGES.en;
+  var ETA = lang === 'zh'
+    ? '大多数报告在 20–40 秒内完成'
+    : 'Most reports finish in 20–40 seconds';
+  var SLOW = lang === 'zh'
+    ? '这次比平时慢，仍在处理中 —— 请不要刷新页面'
+    : 'Slower than usual, still working — please don’t refresh';
+
+  var [elapsed, setElapsed] = useState(0);
 
   useEffect(function() {
-    var interval = setInterval(function() {
-      setCountdown(function(prev) {
-        if (prev <= 1) return 0;
-        return prev - 1;
-      });
-      setProgress(function(prev) {
-        var next = prev + (100 / COUNTDOWN);
-        return next > 100 ? 100 : next;
-      });
+    var timer = setInterval(function() {
+      setElapsed(function(prev) { return prev + 1; });
     }, 1000);
-    return function() { clearInterval(interval); };
+    return function() { clearInterval(timer); };
   }, []);
+
+  var stageIndex = elapsed < 6 ? 0 : elapsed < 16 ? 1 : elapsed < 30 ? 2 : 3;
+  // 渐近进度：35 秒接近满格，但永远留 5%，避免"到 100% 还没好"的骗人感
+  var progress = Math.min(95, Math.round((elapsed / 35) * 100));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0' }}>
@@ -136,8 +155,10 @@ function LoadingView({ text }) {
           </svg>
         </div>
       </div>
-      <p style={{ color: '#4b5563', fontWeight: 500, fontSize: 18, marginBottom: 8 }}>{text || 'Analyzing...'}</p>
-      <p style={{ color: '#9ca3af', fontSize: 14, marginBottom: 0 }}>⏱ {countdown > 0 ? countdown + 's' : 'Almost done...'}</p>
+      <p style={{ color: '#4b5563', fontWeight: 500, fontSize: 18, marginBottom: 8 }}>{stages[stageIndex]}</p>
+      <p style={{ color: elapsed >= 45 ? '#b45309' : '#9ca3af', fontSize: 14, marginBottom: 0 }}>
+        {elapsed >= 45 ? SLOW : ETA}
+      </p>
       <div style={{ width: 256, marginTop: 24, height: 6, background: '#e5e7eb', borderRadius: 999, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: progress + '%', background: '#1e3a5f', borderRadius: 999, transition: 'width 1s linear' }} />
       </div>
@@ -671,7 +692,7 @@ export default function CheckPage() {
       {loading && (
         <section style={{ paddingBottom: 48 }}>
           <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 16px' }}>
-            <LoadingView text={loadingText} hint={t.loadingHint} />
+            <LoadingView text={loadingText} hint={t.loadingHint} lang={lang} />
           </div>
         </section>
       )}
