@@ -28,7 +28,7 @@ export default function BlogListClient() {
   const subtitle = isZh
     ? '关于 Shopify 店铺如何在 ChatGPT、Perplexity 和 Google AI Overviews 等 AI 搜索引擎中赢得曝光的实战文章。'
     : 'Practical articles on how Shopify stores can win visibility in AI-powered search engines like ChatGPT, Perplexity, and Google AI Overviews.';
-  const ctaTitle = isZh ? '检测你店铺的 GEO 评分' : "Check Your Store's GEO Score";
+  const ctaTitle = isZh ? '检测你店铺的 AI 可见度评分' : "Check Your Store's AI Visibility Score";
   const ctaDesc = isZh
     ? '约 10 秒即可查看你的 Shopify 店铺在各 AI 搜索引擎中的可见度。'
     : 'See how visible your Shopify store is across AI search engines in about 10 seconds.';

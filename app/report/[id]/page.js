@@ -385,7 +385,7 @@ export default function ReportPage() {
                   )}
                   {industryBenchmark.exposure_score != null && (
                     <p style={{ fontSize: 14, color: '#0369a1', margin: '8px 0 0 0', fontWeight: 600 }}>
-                      {'🎯 AI Exposure Score: ' + industryBenchmark.exposure_score + '% — ' + tk('exposureDesc', 'Your page can be recommended by AI for {pct}% of real buyer queries').replace('{pct}', industryBenchmark.exposure_score)}
+                      {'🎯 AI Visibility Score: ' + industryBenchmark.exposure_score + '% — ' + tk('exposureDesc', 'Your page can be recommended by AI for {pct}% of real buyer queries').replace('{pct}', industryBenchmark.exposure_score)}
                     </p>
                   )}
                 </div>
@@ -482,7 +482,7 @@ export default function ReportPage() {
                     })()}
                   </div>
                   <div style={{ flex: 1, minWidth: 160, background: '#f0fdf4', borderRadius: 12, padding: 20, textAlign: 'center', border: '1px solid #bbf7d0' }}>
-                    <p style={{ fontSize: 12, color: '#166534', margin: '0 0 6px 0' }}>{'\u{1F3AF}'} AI Exposure Score</p>
+                    <p style={{ fontSize: 12, color: '#166534', margin: '0 0 6px 0' }}>{'\u{1F3AF}'} AI Visibility Score</p>
                     <p style={{ fontSize: 28, fontWeight: 700, color: '#166534', margin: 0 }}>
                       {(recheckResult.before.exposure_score ?? '—') + '%'} <span style={{ color: '#86efac', fontSize: 18 }}>→</span> {recheckResult.after.exposure_score}%
                     </p>
@@ -532,6 +532,14 @@ export default function ReportPage() {
           </div>
         )}
 
+
+        {competitors.length === 0 && (
+          <div style={{ background: '#fffbeb', borderRadius: 16, border: '1px solid #fde68a', padding: 20, marginBottom: 24 }}>
+            <p style={{ fontSize: 14, color: '#92400e', margin: 0 }}>
+              {'\u{1F3C6}'} {tk('competitorUnavailable', 'Competitor benchmark temporarily unavailable. Re-check in a few minutes to include it.')}
+            </p>
+          </div>
+        )}
 
         {competitors.length > 0 && (
           <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>

@@ -52,18 +52,9 @@ export default function HowItWorks() {
   return (
     <section id="how-it-works" className="py-20 bg-white">
       <div className="max-w-6xl mx-auto px-4">
-        {/* 数据冲击条：先回答“为什么需要 AI 搜索可见度” */}
-        <div className="max-w-3xl mx-auto mb-12 rounded-2xl bg-gradient-to-r from-primary-700 to-primary-600 px-8 py-7 text-center text-white shadow-lg">
-          <p className="text-lg md:text-xl font-semibold leading-relaxed">
-            {p.howStat}
-          </p>
-          <p className="mt-2 font-medium text-primary-100">
-            {p.howStatQuestion}
-          </p>
-          <p className="mt-3 text-xs text-primary-200">
-            {p.howStatSource}
-          </p>
-        </div>
+        {/* 2026-11-03：移除"1 in 4 shoppers"数据条。
+            该数字来源标注为 Adobe 报告但无可点击出处，属未核实引用，
+            欧美用户会去核、核不到就不信。等拿到可验证来源再放回。 */}
 
         <div className="text-center mb-14">
           <h2 className="text-3xl md:text-4xl font-bold text-primary-700 mb-4">
