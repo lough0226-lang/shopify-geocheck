@@ -28,11 +28,16 @@ export async function POST(request) {
     }
 
     const apiKey = process.env.CREEM_API_KEY;
-    // plan === 'sub' uses subscription product; otherwise one-time (default)
+    // plan === 'sub' uses subscription product; otherwise one-time.
+    //
+    // 2026-11-03 修复：原来 one-time 在 CREEM_ONETIME_PRODUCT_ID 缺失时会回落到
+    // CREEM_PRODUCT_ID（$29/月订阅），导致点"$19 一次性"的用户被静默升级成订阅。
+    // 现在绝不允许跨档位回落：拿不到对应产品 ID 就报错，宁可让用户看到失败，
+    // 也不能收错钱。
     const isSubscription = plan === 'sub';
     const productId = isSubscription
       ? (process.env.CREEM_PRODUCT_ID || process.env.NEXT_PUBLIC_CREEM_PRODUCT_ID)
-      : (process.env.CREEM_ONETIME_PRODUCT_ID || process.env.CREEM_PRODUCT_ID || process.env.NEXT_PUBLIC_CREEM_PRODUCT_ID);
+      : process.env.CREEM_ONETIME_PRODUCT_ID;
     const testMode = process.env.CREEM_TEST_MODE === 'true';
     const creemBaseUrl = testMode ? 'https://test-api.creem.io' : 'https://api.creem.io';
 
@@ -45,10 +50,15 @@ export async function POST(request) {
     }
 
     if (!productId) {
-      console.error('CREEM_PRODUCT_ID not configured');
+      console.error(`[payment] missing product id for plan=${isSubscription ? 'sub' : 'onetime'}`);
       return NextResponse.json(
-        { error: 'Product not found. Please try again later.' },
-        { status: 500 }
+        {
+          error: isSubscription
+            ? 'This plan is temporarily unavailable. Please contact hello@mygeocheck.com.'
+            : 'The one-time report is temporarily unavailable. The monthly plan still works, or email hello@mygeocheck.com.',
+          error_type: 'PLAN_UNAVAILABLE',
+        },
+        { status: 503 }
       );
     }
 
