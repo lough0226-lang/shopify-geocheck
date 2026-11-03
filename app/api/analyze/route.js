@@ -270,6 +270,9 @@ export async function POST(request) {
       );
     }
 
+    // 计时起点：用于记录真实耗时（后面 analysis_completed 里的 duration_ms）
+    const startedAt = Date.now();
+
     // Analytics
     recordEvent('analysis_started', {
       domain: domainFromUrl(url),
@@ -501,6 +504,18 @@ export async function POST(request) {
     }
 
     // Analytics
+    // duration_ms 用来校准对外承诺的时长（当前文案写 20–40 秒）。
+    // 每周看一次 P50 / P95，文案跟着真实数据走，别反过来。
+    recordEvent('analysis_completed', {
+      report_id: reportId,
+      domain: domainFromUrl(url),
+      email: customerEmail,
+      score: analysisResult.score || 0,
+      is_fallback: analysisResult._fallback || false,
+      duration_ms: Date.now() - startedAt,
+      lang: lang || 'en',
+    });
+
     if (analysisResult._fallback) {
       recordEvent('analysis_fallback', {
         report_id: reportId,

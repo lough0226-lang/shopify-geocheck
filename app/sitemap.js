@@ -84,6 +84,13 @@ export default function sitemap() {
       changeFrequency: 'weekly',
       priority: 0.7,
     },
+    {
+      // 方法页：信任资产，也是这个站最该被 AI 引用的页面之一
+      url: `${baseUrl}/methodology`,
+      lastModified: new Date('2026-11-03'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
     // privacy and terms are noindex — excluded from sitemap
   ];
 
@@ -94,8 +101,14 @@ export default function sitemap() {
     priority: 0.7,
   }));
 
-  const tagPages = tags.map((tag) => ({
-    url: `${baseUrl}/blog/tag/${tag.toLowerCase().replace(/\s+/g, '-')}`,
+  // 去重：getAllTags() 会返回同名但大小写/空格不同的标签，
+  // 归一化后产生重复 slug（线上曾出现 /blog/tag/ai-shopping-agents 两次）。
+  const tagSlugs = [...new Set(
+    tags.map((tag) => tag.toLowerCase().replace(/\s+/g, '-'))
+  )];
+
+  const tagPages = tagSlugs.map((slug) => ({
+    url: `${baseUrl}/blog/tag/${slug}`,
     lastModified: new Date(),
     changeFrequency: 'weekly',
     priority: 0.5,
