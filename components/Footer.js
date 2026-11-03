@@ -72,7 +72,7 @@ export default function Footer() {
         {/* 主体信息：欧盟/英国电商披露义务要求可识别经营者；也是"是不是骗子"的第一道检查 */}
         <div className="border-t border-primary-600 mt-10 pt-6">
           <p className="text-primary-300 text-xs leading-6">
-            My GEO Check is operated by Armitage Labs · Yuci District, Jinzhong City, Shanxi Province, China ·{' '}
+            My GEO Check is operated by Luo Xin · Yuci District, Jinzhong City, Shanxi Province, China ·{' '}
             <a href="mailto:hello@mygeocheck.com" className="underline hover:text-white">hello@mygeocheck.com</a>
           </p>
         </div>

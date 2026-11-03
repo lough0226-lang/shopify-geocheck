@@ -98,7 +98,8 @@ export default function AboutPage() {
         <h2 className="mb-3 mt-12 text-2xl font-bold text-primary-700">Company details</h2>
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm leading-7 text-gray-700">
           <p>
-            <strong>My GEO Check</strong> is operated by Armitage Labs.
+            <strong>My GEO Check</strong> is operated by Luo Xin (罗鑫), an independent business based in
+            China.
           </p>
           <p>Yuci District, Jinzhong City, Shanxi Province, China</p>
           <p>

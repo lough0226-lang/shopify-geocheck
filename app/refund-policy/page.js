@@ -73,7 +73,7 @@ export default function RefundPolicyPage() {
 
         <h2 className="mb-3 mt-10 text-xl font-bold text-primary-700">Contact</h2>
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm leading-7 text-gray-700">
-          <p>My GEO Check is operated by Armitage Labs.</p>
+          <p>My GEO Check is operated by Luo Xin (罗鑫), an independent business based in China.</p>
           <p>Yuci District, Jinzhong City, Shanxi Province, China</p>
           <p>
             <a className="text-primary-700 underline" href="mailto:hello@mygeocheck.com">
