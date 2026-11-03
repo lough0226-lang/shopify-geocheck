@@ -87,10 +87,6 @@ export default function HeroSection() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
             </svg>
           </a>
-          <span className="text-white/30">|</span>
-          <Link href="/check" className="text-white/70 hover:text-white text-sm font-medium transition-colors">
-            {p.heroAdvancedLink}
-          </Link>
         </div>
 
         {/* 信任标识 */}

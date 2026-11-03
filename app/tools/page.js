@@ -90,7 +90,7 @@ export default function ToolsPage() {
         { href: '/tools/discount-calculator', icon: '🏷️', title: p.discountTitle, desc: p.discountSubtitle },
         { href: '/tools/shipping-calculator', icon: '🚚', title: p.shippingTitle, desc: p.shippingSubtitle },
         { href: '/tools/roi-calculator', icon: '📈', title: p.roiTitle, desc: p.roiSubtitle },
-        { href: '/tools/pricing-calculator', icon: '💲', title: p.pricingTitle, desc: p.pricingSubtitle },
+        { href: '/tools/pricing-calculator', icon: '💲', title: p.pricingCalcTitle || p.pricingTitle, desc: p.pricingCalcSubtitle || p.pricingSubtitle },
         { href: '/tools/promo-code-generator', icon: '🎟️', title: p.promoTitle, desc: p.promoSubtitle },
       ],
     },

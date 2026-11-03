@@ -350,7 +350,20 @@ export default function CheckPage() {
       .then(function(res) {
         // Detect 504/503 timeout errors from Vercel concurrency limits
         if (res.status === 504 || res.status === 503) {
-          throw new Error('__TIMEOUT__');
+          // 503 也可能是 AI 分析不可用（后端返回 error_type: 'AI_UNAVAILABLE'）。
+          // 两者性质不同：平台超时重试通常就好；AI 不可用可能是配额耗尽或模型故障，
+          // 重试多少次都没用，必须给用户明确的联系方式。所以读一次 body 区分。
+          return res.json().then(function(errData) {
+            if (errData && errData.error_type === 'AI_UNAVAILABLE') {
+              var aiErr = new Error(t.errorAiUnavailable || errData.error || t.errorTimeout);
+              aiErr.aiUnavailable = true;
+              throw aiErr;
+            }
+            throw new Error('__TIMEOUT__');
+          }).catch(function(e) {
+            if (e && e.aiUnavailable) throw e;
+            throw new Error('__TIMEOUT__');
+          });
         }
         // Capture 422 structured error response before throwing
         if (res.status === 422) {
@@ -439,6 +452,10 @@ export default function CheckPage() {
       // Show specific message for 504/503 timeout errors
       if (err.message === '__TIMEOUT__') {
         setError(t.errorTimeout);
+        setErrorInfo(null);
+      } else if (err.aiUnavailable) {
+        // AI 分析不可用：重试无意义（可能是配额耗尽），给出中性提示 + 联系方式
+        setError(err.message);
         setErrorInfo(null);
       } else if (err.errorType) {
         // Structured scraping error with user-friendly info

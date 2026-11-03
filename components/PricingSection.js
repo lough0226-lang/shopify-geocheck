@@ -52,7 +52,6 @@ export default function PricingSection() {
             </div>
             <div className="mb-5">
               <span className="text-4xl font-bold text-gray-900">$0</span>
-              <span className="text-gray-500 ml-1 text-sm">{p.pricingFreePer}</span>
             </div>
             <ul className="space-y-2.5 mb-7">
               {(p.pricingFreeFeatures || []).map((item, i) => (
@@ -72,11 +71,6 @@ export default function PricingSection() {
 
           {/* $19 one-time */}
           <div className="bg-white rounded-2xl border-2 border-primary-700 p-7 relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <span className="bg-primary-700 text-white text-xs font-bold px-3 py-1 rounded-full">
-                {p.pricingOneTimeBadge}
-              </span>
-            </div>
             <div className="mb-5 mt-1">
               <h3 className="text-lg font-bold text-gray-900 mb-1">{p.pricingOneTimeTitle}</h3>
               <p className="text-gray-500 text-sm">{p.pricingOneTimeSubtitle}</p>

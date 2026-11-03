@@ -104,7 +104,11 @@ function isRateLimited(ip, now) {
 }
 
 /**
- * 生成降级结果（AI 分析完全失败时使用）
+ * 生成降级结果
+ *
+ * @deprecated 2026-11-03 起已停止调用。
+ * AI 分析全部失败时改为直接返回 503（见下方 catch 块），不再生成"分数固定 50"的
+ * 兜底报告。函数体保留仅供排查历史报告时对照，**不要重新启用**。
  */
 function generateFallbackAnalysis(productData, url) {
   let fallbackProductName = 'Product';
@@ -383,22 +387,52 @@ export async function POST(request) {
     const hasPaidAccess = await checkPaidAccess(null, customerEmail);
 
     try {
-      // 先找到竞品（超时保护）
-      categoryCompetitor = await findFreeTierCompetitor(productData, url);
+      // 先找到竞品（超时保护）。竞品查找失败属于非致命错误，不应影响主分析。
+      categoryCompetitor = await findFreeTierCompetitor(productData, url).catch((e) => {
+        console.warn('[analyze] findFreeTierCompetitor failed (non-fatal):', e.message);
+        return null;
+      });
 
       // 并行：用户产品分析 + 竞品分析（仅免费版首次评测，付费用户跳过竞品分析以省成本）
+      // 竞品分析失败同样不能拖垮主分析——否则主分析明明成功，也会被 Promise.all
+      // 整体 reject 掉，最终被误判成"AI 不可用"。
       const [aiRes, compAnalysis] = await Promise.all([
         analyzeProduct(productData, url, lang || 'en'),
         (categoryCompetitor && categoryCompetitor.product_url && !hasPaidAccess)
-          ? analyzeCompetitor(categoryCompetitor)
+          ? analyzeCompetitor(categoryCompetitor).catch((e) => {
+              console.warn('[analyze] analyzeCompetitor failed (non-fatal):', e.message);
+              return null;
+            })
           : Promise.resolve(null),
       ]);
       analysisResult = aiRes;
       competitorAnalysis = compAnalysis;
     } catch (aiError) {
-      console.error('AI analysis failed after all retries:', aiError.message);
-      aiErrorInfo = aiError.message;
-      analysisResult = generateFallbackAnalysis(productData, url);
+      // P0-1 修复（2026-11-03）：AI 分析全部失败时，不再生成"分数固定 50"的兜底报告并落库。
+      // 原因：兜底报告外观正常（有分数、有竞品、有诊断），但内容全是模板套话。
+      // 用户不会理解成"服务繁忙"，只会认为这个工具没用——2026-10-16 有 4 次真实访客
+      // 因此拿到假报告，这比没人来更伤转化。
+      // 改为直接返回 503（不再生成兜底报告），且不产生任何 report 记录，不污染数据库。
+      // 前端 app/check/page.js 会在 503 + error_type=AI_UNAVAILABLE 时给出中性提示与联系方式。
+      console.error('[analyze] AI analysis failed after all model fallbacks:', aiError.message);
+      try {
+        recordEvent('analysis_failed', {
+          domain: domainFromUrl(url),
+          // 不写明文邮箱：/data/events.jsonl 是明文日志，邮箱属于个人信息。
+          // 只记"是否带邮箱"，够做转化分析，不留 PII。
+          has_email: Boolean(customerEmail),
+          reason: String(aiError.message || '').slice(0, 200),
+        });
+      } catch (e) { /* 埋点失败不影响主流程 */ }
+      return jsonResponse(
+        {
+          success: false,
+          error: 'Analysis is temporarily unavailable. Please try again in a few minutes. If this keeps happening, email hello@mygeocheck.com.',
+          error_type: 'AI_UNAVAILABLE',
+          retryable: true,
+        },
+        { status: 503 }
+      );
     }
     // API 用量统计独立执行，失败不影响分析结果，也不污染 AI 错误信息
     try {
