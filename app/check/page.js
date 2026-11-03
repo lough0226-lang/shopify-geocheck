@@ -1175,7 +1175,7 @@ export default function CheckPage() {
                     🛡️ {t.paywallRefund || '7-day money-back guarantee. No questions asked.'}
                   </div>
                   <p style={{ fontSize: 11, marginTop: 8, marginBottom: 0, color: '#8bb5db', textAlign: 'center' }}>
-                    🔒 {t.paywallPaymentMethods || 'Secure payment via Creem · PayPal · Shop Pay · Card'}
+                    🔒 {t.paywallPaymentMethods || 'Secure payment via Creem · Card · Apple Pay · Google Pay'}
                   </p>
                   {t.ctaPriceNote && (
                     <p style={{ fontSize: 11, marginTop: 10, marginBottom: 0, color: '#8bb5db', lineHeight: 1.6, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto', textAlign: 'center' }}>

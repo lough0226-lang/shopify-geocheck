@@ -129,7 +129,7 @@ export default function RootLayout({ children }) {
                   "name": "How does My GEO Check work?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Enter your Shopify product URL, and our AI analyzes your page against 22+ GEO checkpoints including structured data, content quality, AI-readability, and optimization signals. You get an instant visibility score and actionable recommendations."
+                    "text": "Enter your Shopify product URL, and our AI analyzes your page against 9 signal categories including structured data, content quality, AI-readability, and optimization signals. You get an instant visibility score and actionable recommendations."
                   }
                 },
                 {
@@ -137,7 +137,7 @@ export default function RootLayout({ children }) {
                   "name": "Is the free check really free?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Yes! The free check gives you your visibility score and top issues. For a complete analysis with all 22+ checks and detailed fix recommendations, you can unlock the full report for $9.90."
+                    "text": "Yes! The free check gives you your visibility score and top issues. For a complete analysis across all 9 signal categories and detailed fix recommendations, you can unlock the full report for $9.90."
                   }
                 }
               ]

@@ -279,7 +279,7 @@ async function sendReportEmail(reportId, email) {
     <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;padding:20px;margin:20px 0;">
       <h2 style="color:#047857;margin-top:0;font-size:18px;">What's Inside:</h2>
       <ul style="color:#374151;line-height:1.8;padding-left:20px;margin:0;">
-        <li>22+ detailed GEO optimization checks</li>
+        <li>9 categories of detailed GEO signals</li>
         <li>AI search visibility score breakdown</li>
         <li>Quick wins to improve visibility</li>
         <li>Priority-ranked fix recommendations</li>

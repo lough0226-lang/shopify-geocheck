@@ -37,7 +37,7 @@ export default function TermsPage() {
             </ul>
             <p>Every paid report (both one-time and subscription) includes:</p>
             <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-              <li>Complete analysis with all 22+ GEO checkpoints</li>
+              <li>Complete analysis across all 9 signal categories</li>
               <li>Detailed fix recommendations</li>
               <li>Quick wins and strategic recommendations</li>
               <li>Priority-ranked action items</li>

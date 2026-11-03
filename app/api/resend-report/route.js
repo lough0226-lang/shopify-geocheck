@@ -67,7 +67,7 @@ export async function POST(request) {
     <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;padding:16px;margin:20px 0;">
       <p style="color:#047857;font-size:14px;margin:0;">
         <strong>What's in your report:</strong><br/>
-        &bull; 22+ GEO optimization checks<br/>
+        &bull; 9 categories of GEO signals<br/>
         &bull; AI search visibility score<br/>
         &bull; Quick wins &amp; priority fixes<br/>
         &bull; Strategic recommendations
