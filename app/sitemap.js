@@ -91,6 +91,18 @@ export default function sitemap() {
       changeFrequency: 'monthly',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: new Date('2026-11-03'),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/refund-policy`,
+      lastModified: new Date('2026-11-03'),
+      changeFrequency: 'yearly',
+      priority: 0.5,
+    },
     // privacy and terms are noindex — excluded from sitemap
   ];
 

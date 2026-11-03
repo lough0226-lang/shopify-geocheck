@@ -57,6 +57,9 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-3 text-sm">{p.footerSupport}</h4>
             <nav className="flex flex-col gap-2 text-sm text-primary-300">
+              <Link href="/about" className="hover:text-white transition-colors">About</Link>
+              <Link href="/methodology" className="hover:text-white transition-colors">Methodology</Link>
+              <Link href="/refund-policy" className="hover:text-white transition-colors">Refund policy</Link>
               <a href="mailto:hello@mygeocheck.com" className="hover:text-white transition-colors">
                 {p.footerContact}
               </a>
@@ -64,6 +67,14 @@ export default function Footer() {
               <Link href="/terms" className="hover:text-white transition-colors">{p.footerTerms}</Link>
             </nav>
           </div>
+        </div>
+
+        {/* 主体信息：欧盟/英国电商披露义务要求可识别经营者；也是"是不是骗子"的第一道检查 */}
+        <div className="border-t border-primary-600 mt-10 pt-6">
+          <p className="text-primary-300 text-xs leading-6">
+            My GEO Check is operated by Armitage Labs · Yuci District, Jinzhong City, Shanxi Province, China ·{' '}
+            <a href="mailto:hello@mygeocheck.com" className="underline hover:text-white">hello@mygeocheck.com</a>
+          </p>
         </div>
 
         <div className="border-t border-primary-600 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
