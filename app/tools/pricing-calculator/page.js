@@ -54,8 +54,8 @@ export default function PricingCalculatorPage() {
             <main className="bg-gray-50 min-h-screen">
         <div className="max-w-3xl mx-auto px-4 py-16">
           <div className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{p.pricingTitle}</h1>
-            <p className="text-lg text-gray-600">{p.pricingSubtitle}</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{p.pricingCalcTitle || p.pricingTitle}</h1>
+            <p className="text-lg text-gray-600">{p.pricingCalcSubtitle || p.pricingSubtitle}</p>
           </div>
 
           <form onSubmit={calculate} className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
