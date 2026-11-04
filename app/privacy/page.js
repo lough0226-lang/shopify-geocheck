@@ -73,13 +73,25 @@ export default function PrivacyPage() {
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>6. Data Security</h2>
             <p>We implement appropriate technical and organizational measures to protect your data. However, no method of transmission over the Internet is 100% secure, and we cannot guarantee absolute security.</p>
 
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>7. Children&apos;s Privacy</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>7. Analysis Logs, Caching and Rate Limits</h2>
+            <p>To operate the Service, prevent abuse and understand failures, we record each analysis request:</p>
+            <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
+              <li><strong>The product URL submitted</strong> and the store domain it belongs to</li>
+              <li><strong>The result</strong> — score, issues found, the buyer questions tested, and any error message</li>
+              <li><strong>A hashed IP address</strong> and a hashed device identifier, used for rate limiting. We do not store either in plain text</li>
+              <li><strong>Timing and cost metadata</strong> — how long the analysis took and which model was used</li>
+            </ul>
+            <p>We keep these logs for up to 180 days and then delete them automatically. Reports themselves are kept until you ask us to delete them.</p>
+            <p>We cache analysis results so that the same product page is not re-analysed unnecessarily. A cached result may be served for up to 24 hours; every report displays the timestamp of the analysis it is based on, and you can request a fresh analysis at any time.</p>
+            <p>We apply rate limits per IP address and per store domain to keep the Service available for everyone. Limits are described on the pricing page.</p>
+
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>8. Children&apos;s Privacy</h2>
             <p>Our service is not directed to children under 16. We do not knowingly collect personal data from children.</p>
 
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>8. Changes to This Policy</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>9. Changes to This Policy</h2>
             <p>We may update this Privacy Policy from time to time. Changes will be posted on this page with an updated &quot;Last updated&quot; date. Continued use of the service after changes constitutes acceptance of the revised policy.</p>
 
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>9. Contact Us</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>10. Contact Us</h2>
             <p>If you have questions about this Privacy Policy or your data, contact us at:</p>
             <p style={{ marginBottom: 0 }}>
               <strong>Email:</strong> <a href="mailto:hello@mygeocheck.com" style={{ color: '#6366f1' }}>hello@mygeocheck.com</a><br />

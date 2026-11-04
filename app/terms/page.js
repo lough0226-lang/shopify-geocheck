@@ -30,26 +30,18 @@ export default function TermsPage() {
             <p>The free analysis is provided &quot;as is&quot; for informational purposes.</p>
 
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>3. Paid Plans</h2>
-            <p>Full GEO Visibility Reports are offered as two paid options, processed through Creem.io:</p>
+            <p>Paid plans are processed through Creem.io. Both plans are priced per Shopify store, not per page:</p>
             <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-              <li><strong>One-time report ($19.00 USD):</strong> one complete GEO Visibility Report for a single product URL, with a single payment and no recurring charges.</li>
-              <li><strong>Monthly subscription ($29.00 USD/month):</strong> includes 5 complete reports per month. Any reports beyond those 5 are billed at $9.00 USD per report.</li>
+              <li><strong>One-off report ($29.00 USD, single payment):</strong> one full-catalogue scan of up to 200 product pages, 3 products analysed in depth, competitor benchmarks and an action plan, with full access to the resulting report. No subscription, no automatic renewal.</li>
+              <li><strong>Monthly subscription ($49.00 USD/month):</strong> everything in the one-off report, plus 20 products analysed in depth each month, re-checks on day 2, 7, 14 and 30 for every product analysed, and email alerts when a score changes.</li>
             </ul>
-            <p>Every paid report (both one-time and subscription) includes:</p>
-            <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-              <li>Complete analysis across all 9 signal categories</li>
-              <li>Detailed fix recommendations</li>
-              <li>Quick wins and strategic recommendations</li>
-              <li>Priority-ranked action items</li>
-              <li>4 automatic re-scans of the same product URL (on Day 2, Day 7, Day 14 and Day 30 after purchase), with email alerts when your visibility score changes</li>
-            </ul>
-            <p>The automatic re-scans run on the four fixed schedules above; the Service does not provide continuous or 24/7 monitoring.</p>
-            <p><strong>Billing and renewal:</strong> The subscription renews automatically each month at $29.00 USD until cancelled. You can cancel at any time, self-service, in the Creem customer billing portal (via the &quot;Manage Subscription&quot; link on your payment confirmation page or in your report email). After cancelling, you keep full access until the end of the current billing period; you will not be charged again and the subscription will not renew automatically.</p>
+            <p>What &quot;in depth&quot; means: the full-catalogue scan applies nine deterministic signal checks to every page at no additional cost; a deep analysis runs the seven buyer questions through a language model and is what the quota above counts. Deep analyses beyond your plan&apos;s quota are available at $2.00 USD each.</p>
+            <p><strong>Billing and renewal:</strong> The subscription renews automatically each month at $49.00 USD until cancelled. You can cancel at any time, self-service, in the Creem customer billing portal (via the &quot;Manage Subscription&quot; link on your payment confirmation page or in your report email). After cancelling, you keep full access until the end of the current billing period; you will not be charged again and the subscription will not renew automatically.</p>
 
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>4. Payment &amp; Refunds</h2>
             <p>Payments are processed through Creem.io. By making a purchase, you agree to Creem.io&apos;s terms.</p>
             <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-              <li><strong>7-day money-back guarantee:</strong> Within 7 days of purchase, you can request a full refund by emailing hello@mygeocheck.com. This guarantee applies both to the one-time report ($19.00 USD) and to the first payment of a monthly subscription ($29.00 USD). We will refund the full amount you paid.</li>
+              <li><strong>7-day money-back guarantee:</strong> Within 7 days of purchase, you can request a full refund by emailing hello@mygeocheck.com. This guarantee applies both to the one-off report ($29.00 USD) and to the first payment of a monthly subscription ($49.00 USD). We will refund the full amount you paid.</li>
               <li><strong>Cancellation:</strong> Subscriptions can be cancelled at any time in the Creem customer billing portal. After cancellation you can continue using the Service until the end of the current billing period, after which no further charges will be made and the subscription will not renew.</li>
               <li><strong>Technical issues:</strong> If you experience technical problems and cannot receive your report, contact us at hello@mygeocheck.com and we will help you access it or, if the problem cannot be resolved, arrange a refund under the 7-day guarantee above.</li>
               <li><strong>Disputes:</strong> If you believe there was an error in your charge, please contact us first before initiating a chargeback.</li>
@@ -58,7 +50,7 @@ export default function TermsPage() {
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginTop: 32, marginBottom: 12 }}>5. Acceptable Use</h2>
             <p>You agree NOT to:</p>
             <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-              <li>Use the service to analyze URLs you do not own or have permission to analyze</li>
+              <li>Use the service to circumvent access controls, or to scrape or bulk-download it beyond normal interactive use</li>
               <li>Automate, scrape, or abuse the service through bots or scripts</li>
               <li>Attempt to circumvent payment requirements</li>
               <li>Resell or redistribute reports to third parties</li>
@@ -70,7 +62,7 @@ export default function TermsPage() {
             <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
               <li>Results are advisory and do not guarantee specific rankings or AI citations</li>
               <li>AI search engine algorithms change frequently</li>
-              <li>Results may vary based on when the analysis is performed</li>
+              <li>Results reflect the page as fetched at the time of analysis. We may reuse a cached result for up to 24 hours; every report shows its analysis timestamp and can be re-run on request</li>
               <li>The service analyzes publicly accessible content only</li>
             </ul>
 
