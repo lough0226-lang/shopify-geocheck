@@ -13,7 +13,11 @@ import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 const CFG = {
-  apiBase: process.env.BAILIAN_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+  // 注意：阿里云百炼的「业务空间」key 只能配「业务空间专属地址」，
+  // 用全局 dashscope.aliyuncs.com 会返回 401 invalid_api_key。
+  // 专属地址在控制台「API-KEY → 创建后弹窗 → OpenAI 兼容地址」里。
+  apiBase: process.env.BAILIAN_BASE_URL
+    || 'https://ws-uy0lvbot0s5smg8l.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
   model: process.env.BAILIAN_MODEL || 'qwen-plus',
   maxAgeHours: 40,
   minRelevance: 4,
