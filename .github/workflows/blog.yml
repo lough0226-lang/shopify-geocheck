@@ -1,0 +1,56 @@
+name: blog
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: blog
+  cancel-in-progress: false
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 采集 → 起草 → 四道闸门
+        env:
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+          BAILIAN_MODEL: ${{ vars.BAILIAN_MODEL || 'qwen-plus' }}
+        run: node scripts/blog/run.mjs
+
+      - name: 有新稿就开 PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ ! -s lib/posts-auto.json ]; then
+            echo "无产物，今天不发。"
+            exit 0
+          fi
+          git diff --quiet lib/posts-auto.json && { echo "无变化，今天不发。"; exit 0; }
+
+          BRANCH="blog/auto-$(date -u +%Y-%m-%d)"
+          git config user.name  "geo-blog-bot"
+          git config user.email "bot@mygeocheck.com"
+          git checkout -B "$BRANCH"
+          git add lib/posts-auto.json
+          git commit -m "blog: auto draft $(date -u +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Blog draft $(date -u +%Y-%m-%d) — 待人工过目" \
+            --body "已通过四道闸门（数字溯源 / 叙事一致 / 禁用词 / 查重）。合并前请确认标题语境与来源一致、首段无编造经历、至少三个数字能在来源里找到。"
