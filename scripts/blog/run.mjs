@@ -80,7 +80,12 @@ async function collect() {
   const out = [];
   for (const f of FEEDS) {
     try {
-      const r = await get(f.url);
+      const r = await get(f.url, {
+        headers: {
+          'user-agent': 'Mozilla/5.0 (compatible; MyGeoCheckBot/1.0; +https://mygeocheck.com)',
+          accept: 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
+        },
+      });
       if (!r.ok) { log(`feed ${f.name} -> ${r.status}`); continue; }
       const items = parseFeed(await r.text());
       for (const it of items) {
@@ -194,6 +199,13 @@ function slugify(s) {
 }
 
 async function main() {
+  // 配置缺失必须让 CI 变红，而不是静默"今天不发"——静默失败会让人以为流水线正常。
+  if (!process.env.DASHSCOPE_API_KEY) {
+    console.error('[blog] FATAL: DASHSCOPE_API_KEY 未配置。');
+    console.error('[blog] 去 仓库 Settings → Secrets and variables → Actions → 新建 Repository secret，名称必须是 DASHSCOPE_API_KEY。');
+    process.exit(1);
+  }
+
   const titles = readExistingTitles();
   const candidates = await collect();
   log(`候选 ${candidates.length} 条`);
