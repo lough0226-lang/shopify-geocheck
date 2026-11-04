@@ -1,4 +1,4 @@
-// scripts/blog/run.mjs
+﻿// scripts/blog/run.mjs
 // 每日博客流水线：采集 → 起草 → 三道闸门 → 写入 lib/posts-auto.json → 开 PR
 //
 // 设计原则（2026-11 定）：
@@ -19,8 +19,8 @@ const CFG = {
   apiBase: process.env.BAILIAN_BASE_URL
     || 'https://ws-uy0lvbot0s5smg8l.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
   model: process.env.BAILIAN_MODEL || 'qwen-plus',
-  maxAgeHours: 40,
-  minRelevance: 4,
+  maxAgeHours: 72,
+  minRelevance: 3,
   outJson: 'lib/posts-auto.json',
   postsFile: 'lib/posts.js',
 };
@@ -110,15 +110,32 @@ async function collect() {
 
 // ---------- 起草 ----------
 const SPEC = `You are writing as Luo Xin, who has worked in website SEO since 2003 and builds My GEO Check.
-Voice rules, non-negotiable:
-- First person is allowed ONLY for real experience. Never invent tests, clients, or numbers of stores checked.
-- No AI-speak: no "delve", "unlock", "leverage", "game-changer", "seamless", "in today's fast-paced world",
-  no "it's not just X, it's Y", no "let's dive in", no "in conclusion".
-- Vary sentence length. Short sentences are fine. Admit uncertainty plainly.
-- Use at most 3 em dashes in the whole piece.
-- Every number must come from the SOURCE text. Never add a figure from memory.
-- The framing must match the source: if the source is a survey of 4,308 shoppers, do not call it a national experiment.
-- 900-1400 words. Plain HTML paragraphs (<p>), 2-4 <h2> sections, no H1.
+
+LENGTH: 650-1000 words. Anything under 650 is rejected. Do not pad; add substance.
+
+VOICE:
+- At least two sentences must be in the first person and must describe something Luo Xin has actually seen or done as an SEO.
+  Good: "I have reviewed enough product pages to know that a size chart hidden in a JPEG is the single most common reason an assistant cannot answer a fit question."
+  Bad: inventing a client, a test, or a number of stores checked.
+- Vary sentence length. A five-word sentence is fine.
+- At most 3 em dashes (—) in the whole piece. Use full stops instead.
+- Admit uncertainty plainly when the source does.
+
+BANNED, reject-worthy:
+- "delve", "unlock", "leverage", "game-changer", "seamless", "in today's fast-paced world"
+- "It's not just X, it's Y" and any "This isn't X, it's Y" variant
+- "Let's dive in", "In conclusion", "The bottom line is"
+- Opening with background context. Start with the claim, a concrete error, or a counterintuitive fact.
+
+FACTS:
+- Every number must appear in the SOURCE text. Never add a figure from memory or from another article.
+- The framing must match the source. If the source is a survey of 4,308 shoppers in August, do not call it a November national experiment.
+- Years are the exception; use them only for chronology.
+
+STRUCTURE:
+- 2-4 sections, each with several paragraphs. Do not write a 400-word outline with four headings.
+- End with something a Shopify merchant can do this week, in concrete terms.
+
 Return JSON only: {"title":"...","excerpt":"...","tags":["..."],"html":"...","claims":[{"n":"<number as written>","quote":"<sentence from SOURCE containing it>"}]}`;
 
 async function draft(item, sourceText, existingTitles) {
@@ -150,10 +167,28 @@ async function draft(item, sourceText, existingTitles) {
 }
 
 // ---------- 三道闸门 ----------
+function gateCraft(post) {
+  const txt = strip(post.html || '');
+  const words = txt.split(/\s+/).filter(Boolean).length;
+  const dashes = (txt.match(/—/g) || []).length;
+  const fp = (txt.match(/\bI\b|\bI've\b|\bI’ve\b|\bmy\b/gi) || []).length;
+  // 两条最常见的 AI 句式：不是 X 而是 Y / 这不是猜测，这是…
+  const notJust = /isn'?t\s+(just\s+)?[^.!?]{0,50}[.,]\s*it'?s\b/i.test(txt)
+    || /\bnot just\b[^.!?]{0,60}[.,]\s*it'?s\b/i.test(txt);
+  if (words < 600) return { ok: false, why: `字数 ${words} < 600` };
+  if (dashes > 3) return { ok: false, why: `破折号 ${dashes} 个 > 3` };
+  if (fp < 2) return { ok: false, why: '全篇没有第一人称，读起来像通稿' };
+  if (notJust) return { ok: false, why: '出现「不是 X，而是 Y」句式' };
+  return { ok: true };
+}
+
 function gateNumbers(post, sourceText) {
   const body = strip(post.html || '');
   const nums = [...body.matchAll(/\d[\d,]*(?:\.\d+)?/g)]
     .map((m) => m[0].replace(/,/g, ''))
+    // 年份不算统计数字：正文里「2024 年」是时间坐标，用「必须出现在来源」判会 100% 误报。
+    // 年份被写错的概率由人工过目兜底，闸门只管统计数字。
+    .filter((n) => !/^(19|20)\d{2}$/.test(n))
     .filter((n) => Number(n) >= 10 || n.includes('.'));
   const hay = sourceText.replace(/,/g, '');
   const missing = [...new Set(nums)].filter((n) => !hay.includes(n));
@@ -232,6 +267,7 @@ async function main() {
       ['数字溯源', gateNumbers(post, src)],
       ['叙事一致', gateFraming(post, src, item.title)],
       ['禁用词', gateBanned(post)],
+      ['文风', gateCraft(post)],
       ['查重', gateDuplicate(post, titles)],
     ];
     let pass = true;
