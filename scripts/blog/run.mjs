@@ -1,27 +1,26 @@
-﻿// scripts/blog/run.mjs
-// 每日博客流水线：采集 → 起草 → 三道闸门 → 写入 lib/posts-auto.json → 开 PR
+// scripts/blog/run.mjs
+// 每日「选题卡」流水线（方案 C）
 //
-// 设计原则（2026-11 定）：
-//  1) 不直接写 main，永远走分支 + PR，人看一眼再合
-//  2) 三道闸门：数字可溯源 / 叙事与来源一致 / 与近 90 天查重
-//  3) 写作遵守 docs/08-博客写作规范.md：第一人称只用于真实经历，禁 AI 腔
-//  4) 拿不到可用来源就当天不发，宁可空转
+// 为什么不再让模型写正文：
+//   实测 qwen-plus / qwen-max 在「数字必须可溯源」的约束下只能写 460–670 词，
+//   再往下就只能靠编，而 34 篇同构的短评对站点是负资产（scaled content）。
+//   所以机器只负责：采集 → 去重 → 抠出可引用的事实 → 出选题卡；正文由人写。
 //
-// 环境变量：DASHSCOPE_API_KEY（必需）、BAILIAN_MODEL（默认 qwen-plus）
+// 产物：blog-briefs/YYYY-MM-DD.md（一个 PR）
+// 环境变量：DASHSCOPE_API_KEY（可选，用于生成角度建议；缺失时降级为纯机器卡片）
 
 import fs from 'node:fs';
-import { execFileSync } from 'node:child_process';
+import path from 'node:path';
 
 const CFG = {
-  // 注意：阿里云百炼的「业务空间」key 只能配「业务空间专属地址」，
-  // 用全局 dashscope.aliyuncs.com 会返回 401 invalid_api_key。
-  // 专属地址在控制台「API-KEY → 创建后弹窗 → OpenAI 兼容地址」里。
+  // 百炼「业务空间」key 只能配业务空间专属地址，全局 dashscope 域名会 401。
   apiBase: process.env.BAILIAN_BASE_URL
     || 'https://ws-uy0lvbot0s5smg8l.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
   model: process.env.BAILIAN_MODEL || 'qwen-plus',
   maxAgeHours: 72,
   minRelevance: 3,
-  outJson: 'lib/posts-auto.json',
+  topN: 3,
+  outDir: 'blog-briefs',
   postsFile: 'lib/posts.js',
 };
 
@@ -38,19 +37,14 @@ const KEYWORDS = [
   ['structured data', 3], ['llms.txt', 3], ['perplexity', 2], ['product feed', 2],
 ];
 
-const BANNED = [
-  'delve', 'unlock', 'leverage', 'game-changer', 'revolutionary', 'seamless',
-  'cutting-edge', 'holistic', 'empower', 'elevate', 'supercharge',
-  "in today's fast-paced", "let's dive in", "let's break this down",
-  'in conclusion', 'the bottom line is', "it's not just", 'studies show',
-];
-
-// ---------- 工具 ----------
-const log = (...a) => console.log('[blog]', ...a);
+const log = (...a) => console.log('[brief]', ...a);
 const strip = (s = '') => s.replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
-  .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"')
-  .replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+  .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+  .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(parseInt(d, 10)))
+  .replace(/&nbsp;/g, ' ').replace(/&amp;/g, ' & ').replace(/&quot;/g, '"')
+  .replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>')
   .replace(/\s+/g, ' ').trim();
 
 async function get(url, opts = {}, ms = 20000) {
@@ -60,21 +54,24 @@ async function get(url, opts = {}, ms = 20000) {
   finally { clearTimeout(t); }
 }
 
-// ---------- 采集 ----------
+const UA = {
+  'user-agent': 'Mozilla/5.0 (compatible; MyGeoCheckBot/1.0; +https://mygeocheck.com)',
+  accept: 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
+};
+
 function parseFeed(xml) {
-  const blocks = [...xml.matchAll(/<item\b[\s\S]*?<\/item>/gi)].map((m) => m[0]);
-  return blocks.map((raw) => {
+  return [...xml.matchAll(/<item\b[\s\S]*?<\/item>/gi)].map((m) => {
+    const raw = m[0];
     const pick = (tag) => {
-      const m = raw.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i'));
-      return m ? strip(m[1]) : '';
+      const t = raw.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i'));
+      return t ? strip(t[1]) : '';
     };
-    const hrefs = [...raw.matchAll(/<link\b[^>]*href="([^"]+)"/gi)].map((m) => m[1]);
-    const link = hrefs[0] || (raw.match(/<link[^>]*>([^<]+)<\/link>/i) || [])[1] || '';
+    const hrefs = [...raw.matchAll(/<link\b[^>]*href="([^"]+)"/gi)].map((x) => x[1]);
+    const link = (hrefs[0] || (raw.match(/<link[^>]*>([^<]+)<\/link>/i) || [])[1] || '').trim();
     const dateRaw = pick('pubDate') || pick('published') || pick('updated');
     return {
-      title: pick('title'),
-      link: link.trim(),
-      summary: (pick('description') || pick('summary') || pick('content')).slice(0, 1500),
+      title: pick('title'), link,
+      summary: (pick('description') || pick('summary') || pick('content')).slice(0, 2000),
       ts: dateRaw ? Date.parse(dateRaw) : NaN,
     };
   }).filter((x) => x.title && /^https?:\/\//.test(x.link));
@@ -84,19 +81,14 @@ async function collect() {
   const out = [];
   for (const f of FEEDS) {
     try {
-      const r = await get(f.url, {
-        headers: {
-          'user-agent': 'Mozilla/5.0 (compatible; MyGeoCheckBot/1.0; +https://mygeocheck.com)',
-          accept: 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
-        },
-      });
+      const r = await get(f.url, { headers: UA });
       if (!r.ok) { log(`feed ${f.name} -> ${r.status}`); continue; }
       const items = parseFeed(await r.text());
       for (const it of items) {
         const hay = `${it.title} ${it.summary}`.toLowerCase();
         let score = 0;
         for (const [k, w] of KEYWORDS) if (hay.includes(k)) score += w * f.w;
-        out.push({ ...it, score });
+        out.push({ ...it, score, feed: f.name });
       }
       log(`feed ${f.name}: ${items.length} 条`);
     } catch (e) { log(`feed ${f.name} 失败: ${e.message}`); }
@@ -108,201 +100,170 @@ async function collect() {
     .sort((a, b) => b.score - a.score);
 }
 
-// ---------- 起草 ----------
-const SPEC = `You are writing as Luo Xin, who has worked in website SEO since 2003 and builds My GEO Check.
+// 直接从来源里抠出带数字的句子——这些才是可引用的事实，不经过模型转述。
+// 必须过滤掉导航/推荐位，否则会抓到「Join The Live Audit…」这类页面垃圾。
+function keyNumbers(src, limit = 8) {
+  const JUNK = /subscribe|newsletter|advertisement|read full bio|featured image|sej staff|min read|\breads\b|follow|sign in|cookie|privacy policy|share this|listen to|podcast|webinar|copyright|all rights reserved|skip to|menu\b/i;
+  // 只留"数据型"数字：百分比、金额、倍数，或带研究/样本类词汇的句子
+  const DATA = /\d+(?:\.\d+)?\s*%|\$\s?\d|\d+\s?x\b|\d+\s?(?:percent|million|billion)|\b(?:survey|study|respondents|users|revenue|visits|impressions|clicks|sessions|advertisers|merchants)\b/i;
 
-LENGTH: 650-1000 words. Anything under 650 is rejected. Do not pad; add substance.
+  const sentences = src.split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 50 && s.length < 300)
+    .filter((s) => /\d/.test(s))
+    .filter((s) => !JUNK.test(s))
+    .filter((s) => DATA.test(s))
+    .filter((s) => /^[A-Z0-9"']/.test(s));
 
-VOICE:
-- At least two sentences must be in the first person and must describe something Luo Xin has actually seen or done as an SEO.
-  Good: "I have reviewed enough product pages to know that a size chart hidden in a JPEG is the single most common reason an assistant cannot answer a fit question."
-  Bad: inventing a client, a test, or a number of stores checked.
-- Vary sentence length. A five-word sentence is fine.
-- At most 3 em dashes (—) in the whole piece. Use full stops instead.
-- Admit uncertainty plainly when the source does.
-
-BANNED, reject-worthy:
-- "delve", "unlock", "leverage", "game-changer", "seamless", "in today's fast-paced world"
-- "It's not just X, it's Y" and any "This isn't X, it's Y" variant
-- "Let's dive in", "In conclusion", "The bottom line is"
-- Opening with background context. Start with the claim, a concrete error, or a counterintuitive fact.
-
-FACTS:
-- Every number must appear in the SOURCE text. Never add a figure from memory or from another article.
-- The framing must match the source. If the source is a survey of 4,308 shoppers in August, do not call it a November national experiment.
-- Years are the exception; use them only for chronology.
-
-STRUCTURE:
-- 2-4 sections, each with several paragraphs. Do not write a 400-word outline with four headings.
-- End with something a Shopify merchant can do this week, in concrete terms.
-
-Return JSON only: {"title":"...","excerpt":"...","tags":["..."],"html":"...","claims":[{"n":"<number as written>","quote":"<sentence from SOURCE containing it>"}]}`;
-
-async function draft(item, sourceText, existingTitles) {
-  const key = process.env.DASHSCOPE_API_KEY;
-  if (!key) throw new Error('DASHSCOPE_API_KEY missing');
-  const body = {
-    model: CFG.model,
-    temperature: 0.5,
-    max_tokens: 4000,
-    messages: [
-      { role: 'system', content: SPEC },
-      {
-        role: 'user',
-        content: `SOURCE TITLE: ${item.title}\nSOURCE URL: ${item.link}\n\nSOURCE TEXT:\n"""\n${sourceText.slice(0, 12000)}\n"""\n\nAlready published (do not duplicate these angles):\n${existingTitles.slice(0, 40).join('\n')}`,
-      },
-    ],
-  };
-  const r = await get(`${CFG.apiBase}/chat/completions`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
-    body: JSON.stringify(body),
-  }, 120000);
-  const txt = await r.text();
-  if (!r.ok) throw new Error(`LLM ${r.status}: ${txt.slice(0, 200)}`);
-  const content = JSON.parse(txt).choices?.[0]?.message?.content || '';
-  const m = content.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error('no JSON in response');
-  return JSON.parse(m[0]);
-}
-
-// ---------- 三道闸门 ----------
-function gateCraft(post) {
-  const txt = strip(post.html || '');
-  const words = txt.split(/\s+/).filter(Boolean).length;
-  const dashes = (txt.match(/—/g) || []).length;
-  const fp = (txt.match(/\bI\b|\bI've\b|\bI’ve\b|\bmy\b/gi) || []).length;
-  // 两条最常见的 AI 句式：不是 X 而是 Y / 这不是猜测，这是…
-  const notJust = /isn'?t\s+(just\s+)?[^.!?]{0,50}[.,]\s*it'?s\b/i.test(txt)
-    || /\bnot just\b[^.!?]{0,60}[.,]\s*it'?s\b/i.test(txt);
-  if (words < 600) return { ok: false, why: `字数 ${words} < 600` };
-  if (dashes > 3) return { ok: false, why: `破折号 ${dashes} 个 > 3` };
-  if (fp < 2) return { ok: false, why: '全篇没有第一人称，读起来像通稿' };
-  if (notJust) return { ok: false, why: '出现「不是 X，而是 Y」句式' };
-  return { ok: true };
-}
-
-function gateNumbers(post, sourceText) {
-  const body = strip(post.html || '');
-  const nums = [...body.matchAll(/\d[\d,]*(?:\.\d+)?/g)]
-    .map((m) => m[0].replace(/,/g, ''))
-    // 年份不算统计数字：正文里「2024 年」是时间坐标，用「必须出现在来源」判会 100% 误报。
-    // 年份被写错的概率由人工过目兜底，闸门只管统计数字。
-    .filter((n) => !/^(19|20)\d{2}$/.test(n))
-    .filter((n) => Number(n) >= 10 || n.includes('.'));
-  const hay = sourceText.replace(/,/g, '');
-  const missing = [...new Set(nums)].filter((n) => !hay.includes(n));
-  return missing.length ? { ok: false, why: `数字不在来源里: ${missing.slice(0, 8).join(', ')}` } : { ok: true };
-}
-
-function gateFraming(post, sourceText, sourceTitle) {
-  // 标题里出现的"事件词"必须在来源里也出现，防止把 8 月的调查写成双十一
-  const WINDOWS = ['double 11', '618', 'black friday', 'cyber monday', 'q1', 'q2', 'q3', 'q4',
-    'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
-  const hayText = `${post.title} ${post.excerpt}`.toLowerCase();
-  const src = `${sourceTitle} ${sourceText}`.toLowerCase();
-  const claimed = WINDOWS.filter((w) => hayText.includes(w));
-  const unsupported = claimed.filter((w) => !src.includes(w));
-  return unsupported.length
-    ? { ok: false, why: `标题/摘要提到「${unsupported.join(', ')}」但来源里没有` }
-    : { ok: true };
-}
-
-function gateBanned(post) {
-  const body = `${post.title} ${post.excerpt} ${strip(post.html)}`.toLowerCase();
-  const hit = BANNED.filter((w) => body.includes(w));
-  return hit.length ? { ok: false, why: `禁用词: ${hit.join(', ')}` } : { ok: true };
-}
-
-function gateDuplicate(post, existingTitles) {
-  const norm = (s) => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((w) => w.length > 3);
-  const a = new Set(norm(post.title));
-  for (const t of existingTitles) {
-    const b = new Set(norm(t));
-    let inter = 0;
-    for (const w of a) if (b.has(w)) inter += 1;
-    const jac = inter / (a.size + b.size - inter || 1);
-    if (jac > 0.75) return { ok: false, why: `与已有标题过于相似: ${t}` };
+  const uniq = [];
+  const seen = new Set();
+  for (const s of sentences) {
+    const k = s.slice(0, 60).toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    uniq.push(s);
+    if (uniq.length >= limit) break;
   }
-  return { ok: true };
+  return uniq;
 }
 
-// ---------- 主流程 ----------
 function readExistingTitles() {
   const src = fs.readFileSync(CFG.postsFile, 'utf8');
   return [...src.matchAll(/^\s{4}title:\s*'([^']+)'/gm)].map((m) => m[1]);
 }
 
-function slugify(s) {
-  return s.toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+const BRIEF_SPEC = `You are helping Luo Xin (SEO since 2003, builds My GEO Check, sells to Shopify merchants) decide whether a news item is worth writing about.
+
+Return JSON only:
+{"worthWriting": true|false, "reason": "...", "angles": ["...","..."], "pitfalls": ["..."], "shopifyAction": "..."}
+
+Rules:
+- worthWriting is false if the item is a product announcement with no consequence for merchants, a listicle, or an opinion piece with no new facts.
+- angles: 2-4 specific ways to write about this FROM A PRACTITIONER'S VIEW. Each must be a claim, not a topic.
+- pitfalls: what a careless writer would get wrong (over-extrapolating a US figure to all markets, calling a survey a national experiment, treating a vendor's own claim as independent research).
+- shopifyAction: one concrete thing a merchant could change on their store this week, or "" if none.
+- No hype words. No "leverage", "unlock", "game-changer".`
+
+async function briefFromModel(item, src, titles) {
+  const key = process.env.DASHSCOPE_API_KEY;
+  if (!key) return null;
+  const body = {
+    model: CFG.model, temperature: 0.3, max_tokens: 900,
+    messages: [
+      { role: 'system', content: BRIEF_SPEC },
+      {
+        role: 'user',
+        content: `TITLE: ${item.title}\nURL: ${item.link}\n\nSOURCE:\n"""${src.slice(0, 8000)}"""\n\nRecent posts on the site (avoid repeating these angles):\n${titles.slice(0, 30).join('\n')}`,
+      },
+    ],
+  };
+  try {
+    const r = await get(`${CFG.apiBase}/chat/completions`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
+      body: JSON.stringify(body),
+    }, 90000);
+    if (!r.ok) { log(`  模型 ${r.status}: ${(await r.text()).slice(0, 120)}`); return null; }
+    const txt = await r.text();
+    const content = JSON.parse(txt).choices?.[0]?.message?.content || '';
+    const m = content.match(/\{[\s\S]*\}/);
+    return m ? JSON.parse(m[0]) : null;
+  } catch (e) { log(`  模型调用失败: ${e.message}`); return null; }
+}
+
+function similarTitle(t, titles) {
+  const norm = (s) => new Set(s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((w) => w.length > 3));
+  const a = norm(t);
+  for (const old of titles) {
+    const b = norm(old);
+    let inter = 0;
+    for (const w of a) if (b.has(w)) inter += 1;
+    if (inter / (a.size + b.size - inter || 1) > 0.75) return old;
+  }
+  return null;
 }
 
 async function main() {
-  // 配置缺失必须让 CI 变红，而不是静默"今天不发"——静默失败会让人以为流水线正常。
   if (!process.env.DASHSCOPE_API_KEY) {
-    console.error('[blog] FATAL: DASHSCOPE_API_KEY 未配置。');
-    console.error('[blog] 去 仓库 Settings → Secrets and variables → Actions → 新建 Repository secret，名称必须是 DASHSCOPE_API_KEY。');
-    process.exit(1);
+    log('提示：DASHSCOPE_API_KEY 未配置，降级为纯机器卡片（无角度建议）。');
   }
 
   const titles = readExistingTitles();
   const candidates = await collect();
   log(`候选 ${candidates.length} 条`);
-  if (!candidates.length) { log('无可发布选题，今天不发。'); return; }
+  if (!candidates.length) { log('今天没有候选。'); return; }
 
-  for (const item of candidates.slice(0, 4)) {
-    log(`尝试: ${item.title.slice(0, 70)}`);
+  const picked = [];
+  for (const item of candidates) {
+    if (picked.length >= CFG.topN) break;
+    const dup = similarTitle(item.title, titles);
+    if (dup) { log(`跳过（与旧文重复）: ${item.title.slice(0, 50)}`); continue; }
+
     let src = item.summary;
     try {
-      const r = await get(item.link, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; MyGeoCheckBot)' } });
+      const r = await get(item.link, { headers: UA });
       if (r.ok) src = strip(await r.text()).slice(0, 60000);
-    } catch { /* 用 summary 兜底 */ }
-    if (src.length < 1500) { log('  来源正文太短，跳过'); continue; }
+    } catch { /* 用 summary */ }
+    if (src.length < 600) { log(`跳过（来源太短）: ${item.title.slice(0, 50)}`); continue; }
 
-    let post;
-    try { post = await draft(item, src, titles); }
-    catch (e) { log(`  起草失败: ${e.message}`); continue; }
-
-    const gates = [
-      ['数字溯源', gateNumbers(post, src)],
-      ['叙事一致', gateFraming(post, src, item.title)],
-      ['禁用词', gateBanned(post)],
-      ['文风', gateCraft(post)],
-      ['查重', gateDuplicate(post, titles)],
-    ];
-    let pass = true;
-    for (const [name, g] of gates) {
-      log(`  ${g.ok ? '✓' : '✗'} ${name}${g.ok ? '' : ' — ' + g.why}`);
-      if (!g.ok) pass = false;
+    const nums = keyNumbers(src);
+    const advice = await briefFromModel(item, src, titles);
+    if (advice && advice.worthWriting === false) {
+      log(`跳过（不值得写）: ${item.title.slice(0, 50)} — ${String(advice.reason || '').slice(0, 60)}`);
+      continue;
     }
-    if (!pass) { log('  闸门未过，丢弃\n'); continue; }
-
-    const now = new Date();
-    const date = now.toISOString().slice(0, 10);
-    const entry = {
-      slug: `${date}-${slugify(post.title)}`,
-      title: post.title,
-      excerpt: post.excerpt,
-      date,
-      updated: date,
-      dateDisplay: now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: '2-digit' }),
-      readingTime: `${Math.max(5, Math.round(strip(post.html).split(/\s+/).length / 230))} min read`,
-      tags: (post.tags || []).slice(0, 6),
-      coverColor: 'from-slate-700 to-slate-900',
-      quickAnswer: null,
-      faq: [],
-      content: post.html,
-      source: item.link,
-      auto: true,
-    };
-
-    const prev = fs.existsSync(CFG.outJson) ? JSON.parse(fs.readFileSync(CFG.outJson, 'utf8')) : [];
-    fs.writeFileSync(CFG.outJson, JSON.stringify([entry, ...prev], null, 2));
-    log(`  已写入 ${CFG.outJson}: ${entry.slug}`);
-    log('  四道闸门全部通过。');
-    return;
+    picked.push({ item, src, nums, advice });
+    log(`收录: ${item.title.slice(0, 60)}（${nums.length} 条带数字的句子）`);
   }
-  log('全部候选都未通过，今天不发。');
+
+  if (!picked.length) { log('今天没有值得写的选题。'); return; }
+
+  const date = new Date().toISOString().slice(0, 10);
+  const lines = [];
+  lines.push(`# 选题卡 ${date}`);
+  lines.push('');
+  lines.push(`自动生成。共 ${picked.length} 条候选，每条附：来源、可引用的事实（原句）、角度建议、坑。`);
+  lines.push('');
+  picked.forEach((p, i) => {
+    lines.push('---');
+    lines.push('');
+    lines.push(`## ${i + 1}. ${p.item.title}`);
+    lines.push('');
+    lines.push(`- 来源：${p.item.link}`);
+    lines.push(`- 采集自：${p.item.feed}｜相关度 ${p.item.score}`);
+    lines.push('');
+    if (p.advice?.reason) {
+      lines.push(`**为什么值得写**：${p.advice.reason}`);
+      lines.push('');
+    }
+    if (p.advice?.angles?.length) {
+      lines.push('**可用角度**');
+      p.advice.angles.forEach((a) => lines.push(`- ${a}`));
+      lines.push('');
+    }
+    if (p.nums.length) {
+      lines.push('**可引用的事实**（原句照抄，写稿时直接引，不要改写数字）');
+      p.nums.forEach((s) => lines.push(`- ${s}`));
+      lines.push('');
+    }
+    if (p.advice?.pitfalls?.length) {
+      lines.push('**坑**');
+      p.advice.pitfalls.forEach((s) => lines.push(`- ${s}`));
+      lines.push('');
+    }
+    if (p.advice?.shopifyAction) {
+      lines.push(`**本周可落地**：${p.advice.shopifyAction}`);
+      lines.push('');
+    }
+  });
+  lines.push('---');
+  lines.push('');
+  lines.push('写稿要求见 `docs/08-博客写作规范.md`：第一人称只用真实经历，禁用 AI 腔，数字只能来自上方原句。');
+
+  fs.mkdirSync(CFG.outDir, { recursive: true });
+  const out = path.join(CFG.outDir, `${date}.md`);
+  fs.writeFileSync(out, lines.join('\n'));
+  log(`已写入 ${out}（${picked.length} 条）`);
 }
 
 await main();
