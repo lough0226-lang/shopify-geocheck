@@ -22,15 +22,13 @@ export default function AboutPage() {
         </h1>
 
         <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-start">
-          {/* 照片：把 /founder.jpg 放到 public/ 下，然后把下面这个 div 换成
-              <img src="/founder.jpg" alt="Luo Xin" className="h-28 w-28 rounded-full object-cover" />
-              在上线前先用占位块，避免出现破图。 */}
-          <div
-            className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-gray-100 text-2xl font-semibold text-gray-400"
-            aria-label="Portrait placeholder"
-          >
-            LX
-          </div>
+          <img
+            src="/founder.jpg"
+            alt="Luo Xin, founder of My GEO Check"
+            width={112}
+            height={112}
+            className="h-28 w-28 shrink-0 rounded-full object-cover"
+          />
           <div>
             <p className="text-lg font-semibold text-gray-900">Luo Xin · 罗鑫</p>
             <p className="mt-1 text-sm text-gray-600">
