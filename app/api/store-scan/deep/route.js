@@ -11,7 +11,6 @@ import { scrapeProductPage } from '../../../../lib/scraper';
 import { analyzeProduct } from '../../../../lib/openai';
 import { DEEP_QUOTA } from '../../../../lib/storeScan';
 import { recordEvent, domainFromUrl } from '../../../../lib/analytics';
-import crypto from 'node:crypto';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
