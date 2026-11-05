@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 // 整店扫描页：输入店铺域名 → 规则层扫最多 200 个商品 → 汇总 + 最差清单 + 深挖入口
 //
@@ -30,6 +30,10 @@ const COPY = {
     deepTitle: 'Deep analysis',
     deepNote: 'These are the products Shopify ranks as best-selling. A deep analysis runs the seven buyer questions through a model and gives you the exact fix.',
     deepCta: 'Analyse this product',
+    deepRunning: 'Analysing',
+    deepStart: 'Run deep analysis',
+    deepOpen: 'Open report',
+    deepQuota: 'Your plan deep-analysis quota is used up.',
     footer: 'Scanned {n} products in {ms} ms. Catalog data comes from your store’s public product feed.',
     err: 'We could not read that catalog. Check the domain, or the store may not be on Shopify.',
   },
@@ -52,6 +56,10 @@ const COPY = {
     deepTitle: '深度分析',
     deepNote: '这些是 Shopify 判定为热销的商品。深度分析会把 7 个买家问题跑一遍模型，并给出可以直接粘贴的修复。',
     deepCta: '分析这个商品',
+    deepRunning: '分析中',
+    deepStart: '开始深度分析',
+    deepOpen: '打开报告',
+    deepQuota: '当前套餐的深挖额度已用完。',
     footer: '共扫描 {n} 个商品，耗时 {ms} 毫秒。商品数据来自店铺公开的商品目录。',
     err: '读不到这个商品目录。请检查域名，或者这家店不在 Shopify 上。',
   },
@@ -74,6 +82,10 @@ const COPY = {
     deepTitle: 'Tiefenanalyse',
     deepNote: 'Diese Produkte stuft Shopify als Bestseller ein. Die Tiefenanalyse prüft die sieben Käuferfragen und liefert die konkrete Korrektur.',
     deepCta: 'Produkt analysieren',
+    deepRunning: 'Analyse läuft',
+    deepStart: 'Tiefenanalyse starten',
+    deepOpen: 'Bericht öffnen',
+    deepQuota: 'Das Kontingent für Tiefenanalysen ist aufgebraucht.',
     footer: '{n} Produkte in {ms} ms geprüft. Daten aus dem öffentlichen Produktfeed des Shops.',
     err: 'Katalog nicht lesbar. Prüfen Sie die Domain — oder der Shop läuft nicht auf Shopify.',
   },
@@ -96,6 +108,10 @@ const COPY = {
     deepTitle: 'Analyse approfondie',
     deepNote: 'Ces produits sont classés meilleures ventes par Shopify. L’analyse approfondie teste les sept questions et donne la correction exacte.',
     deepCta: 'Analyser ce produit',
+    deepRunning: 'Analyse en cours',
+    deepStart: 'Lancer l’analyse',
+    deepOpen: 'Ouvrir le rapport',
+    deepQuota: 'Le quota d’analyses approfondies est épuisé.',
     footer: '{n} produits analysés en {ms} ms. Données issues du flux produit public de la boutique.',
     err: "Catalogue illisible. Vérifiez le domaine, ou la boutique n'est pas sur Shopify.",
   },
@@ -118,6 +134,10 @@ const COPY = {
     deepTitle: 'Análisis profundo',
     deepNote: 'Estos productos son los más vendidos según Shopify. El análisis profundo prueba las siete preguntas y da la corrección exacta.',
     deepCta: 'Analizar este producto',
+    deepRunning: 'Analizando',
+    deepStart: 'Iniciar análisis profundo',
+    deepOpen: 'Abrir informe',
+    deepQuota: 'La cuota de análisis profundo está agotada.',
     footer: '{n} productos analizados en {ms} ms. Datos del feed público de la tienda.',
     err: 'No pudimos leer ese catálogo. Revisa el dominio o la tienda no está en Shopify.',
   },
@@ -140,6 +160,10 @@ const COPY = {
     deepTitle: 'Análise profunda',
     deepNote: 'Estes são os produtos mais vendidos segundo a Shopify. A análise profunda testa as sete perguntas e entrega a correção exata.',
     deepCta: 'Analisar este produto',
+    deepRunning: 'Analisando',
+    deepStart: 'Iniciar análise profunda',
+    deepOpen: 'Abrir relatorio',
+    deepQuota: 'A cota de análise profunda acabou.',
     footer: '{n} produtos analisados em {ms} ms. Dados do feed público da loja.',
     err: 'Não conseguimos ler esse catálogo. Verifique o domínio ou a loja não está na Shopify.',
   },
@@ -153,6 +177,8 @@ export default function ScanPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
+  // 深挖：逐个跑，进度由调用次数驱动（一次请求只处理一个商品，避免函数超时）
+  const [deepState, setDeepState] = useState({ running: false, done: [], total: 0, current: null, error: '' });
 
   async function submit(e) {
     e.preventDefault();
@@ -160,6 +186,7 @@ export default function ScanPage() {
     setLoading(true);
     setError('');
     setResult(null);
+    setDeepState({ running: false, done: [], total: 0, current: null, error: '' });
     try {
       const r = await fetch('/api/store-scan', {
         method: 'POST',
@@ -177,6 +204,37 @@ export default function ScanPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function runDeep() {
+    if (!result || deepState.running) return;
+    const handles = (result.deep_handles || []).slice(0, result.deep_quota);
+    setDeepState({ running: true, done: [], total: handles.length, current: null, error: '' });
+
+    const done = [];
+    for (let i = 0; i < handles.length; i += 1) {
+      const handle = handles[i];
+      setDeepState((s) => ({ ...s, current: handle }));
+      try {
+        const r = await fetch('/api/store-scan/deep', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ scan_id: result.scan_id, handle, lang }),
+        });
+        const j = await r.json().catch(() => null);
+        if (j?.success) {
+          done.push(j.result);
+          setDeepState((s) => ({ ...s, done: [...done] }));
+        } else {
+          setDeepState((s) => ({ ...s, error: j?.message || j?.error || 'failed', current: null }));
+          break;
+        }
+      } catch {
+        setDeepState((s) => ({ ...s, error: 'network', current: null }));
+        break;
+      }
+    }
+    setDeepState((s) => ({ ...s, running: false, current: null }));
   }
 
   const d = result?.summary;
@@ -287,19 +345,70 @@ export default function ScanPage() {
             <div className="rounded-2xl border border-primary-200 bg-primary-50/40 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-2">{t.deepTitle}</h2>
               <p className="text-sm text-gray-600 leading-6 mb-4">{t.deepNote}</p>
-              <ul className="space-y-2">
-                {result.deep_handles.map((h) => (
-                  <li key={h} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white border border-gray-200 px-3 py-2">
-                    <code className="text-xs text-gray-700">{h}</code>
-                    <Link
-                      href={`/check?url=${encodeURIComponent(`https://${result.domain}/products/${h}`)}`}
-                      className="text-sm font-semibold text-primary-700 hover:underline"
-                    >
-                      {t.deepCta} →
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+
+              <button
+                type="button"
+                onClick={runDeep}
+                disabled={deepState.running}
+                className="mb-4 rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-800 disabled:opacity-60"
+              >
+                {deepState.running
+                  ? `${t.deepRunning} ${deepState.done.length + 1}/${deepState.total}`
+                  : `${t.deepStart} (${result.deep_quota})`}
+              </button>
+
+              {/* 进度 */}
+              {(deepState.running || deepState.done.length > 0) && (
+                <div className="mb-4">
+                  <div className="h-2 overflow-hidden rounded-full bg-white border border-gray-200">
+                    <div
+                      className="h-full bg-primary-700 transition-all"
+                      style={{ width: `${deepState.total ? (deepState.done.length / deepState.total) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {deepState.done.length} / {deepState.total}
+                    {deepState.current ? ` · ${deepState.current}` : ''}
+                  </p>
+                </div>
+              )}
+
+              {deepState.error && (
+                <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  {deepState.error === 'quota_exhausted' ? t.deepQuota : deepState.error}
+                </p>
+              )}
+
+              {/* 结果 */}
+              {deepState.done.length > 0 ? (
+                <ul className="space-y-2">
+                  {deepState.done.map((d) => (
+                    <li key={d.handle} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white border border-gray-200 px-3 py-2">
+                      <span className="text-sm text-gray-800">{d.product_name || d.handle}</span>
+                      <span className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-gray-900">{d.score}</span>
+                        <Link href={`/report/${d.report_id}`} className="text-sm font-semibold text-primary-700 hover:underline">
+                          {t.deepOpen} →
+                        </Link>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className="space-y-2">
+                  {result.deep_handles.map((h) => (
+                    <li key={h} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white border border-gray-200 px-3 py-2">
+                      <code className="text-xs text-gray-700">{h}</code>
+                      <Link
+                        href={`/check?url=${encodeURIComponent(`https://${result.domain}/products/${h}`)}`}
+                        className="text-sm font-semibold text-primary-700 hover:underline"
+                      >
+                        {t.deepCta} →
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
 

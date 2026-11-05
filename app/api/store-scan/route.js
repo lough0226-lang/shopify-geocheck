@@ -5,7 +5,7 @@
 // 深挖（模型分析）不在这里做，这里只负责挑出"值得深挖的那 N 个"。
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { normalizeDomain, fetchCatalog, summarize } from '../../../lib/storeScan';
+import { normalizeDomain, fetchCatalog, summarize, DEEP_QUOTA } from '../../../lib/storeScan';
 import { saveStoreScan, getStoreScan, initDatabase } from '../../../lib/db';
 import { recordEvent } from '../../../lib/analytics';
 
@@ -13,8 +13,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-// 各档位的深挖额度（和定价页 / 条款保持一致）
-const DEEP_QUOTA = { free: 1, onetime: 3, monthly: 20 };
+// 各档位的深挖额度在 lib/storeScan.js 里统一定义，避免定价页与代码各写一套。
 
 function planFromParam(v) {
   return Object.prototype.hasOwnProperty.call(DEEP_QUOTA, v) ? v : 'free';
