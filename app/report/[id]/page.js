@@ -72,7 +72,9 @@ export default function ReportPage() {
           }
         }
 
-        fetch('/api/analyze?report_id=' + reportId)
+        // 把邮件链接里的 k（所有权凭证）原样转给 API，否则只能拿到免费版视图
+        var claimToken = params ? params.get('k') : null;
+        fetch('/api/analyze?report_id=' + reportId + (claimToken ? '&k=' + encodeURIComponent(claimToken) : ''))
           .then(function(res) {
             if (!res.ok) throw new Error('Failed to load report');
             return res.json();

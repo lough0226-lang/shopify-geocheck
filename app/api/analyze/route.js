@@ -7,6 +7,7 @@ import { analyzeProduct } from '../../../lib/openai';
 import { recordEvent, domainFromUrl } from '../../../lib/analytics';
 import { findCategoryCompetitor, analyzeCompetitor } from '../../../lib/shopifyCompetitors';
 import { saveReport, getReport, unlockReport, updateApiUsage, getApiUsage, initDatabase, getActiveSubscription, getSubscriptionUsage, incrementSubscriptionUsage, isFoundingCustomer, enrollFoundingCustomer, countFoundingCustomers } from '../../../lib/db';
+import { verifyReportToken } from '../../../lib/reportToken';
 
 // 强制使用 Node.js 运行时（非 Edge Runtime）
 export const runtime = 'nodejs';
@@ -669,10 +670,15 @@ export async function GET(request) {
   }
 
   // 判断是否应该返回付费内容
-  let showFullContent = report.unlocked || false;
-  
-  // 如果需要解锁 或 用户有订阅，检查权限
-  if (shouldUnlock || email) {
+  //
+  // 安全（2026-11-05）：不再因为 report.unlocked 就把付费内容发给任何人。
+  // 裸链接（爬虫、聊天预览、转发、枚举）只能拿到免费版视图。
+  // 合法持有者通过邮件里的 ?k=<HMAC> 证明身份。
+  const token = searchParams.get('k');
+  let showFullContent = report.unlocked ? verifyReportToken(token, reportId) : false;
+
+  // 兼容旧流程：带 email 的请求仍需通过 checkPaidAccess（订阅/订单校验）
+  if (!showFullContent && (shouldUnlock || email)) {
     const customerEmail = typeof email === 'string' && email.includes('@') ? email.trim().toLowerCase() : null;
     showFullContent = await checkPaidAccess(report, customerEmail);
     if (showFullContent && !report.unlocked) {

@@ -1,6 +1,7 @@
 // Creem.io Payment Integration - Checkout Session Creator
 import { NextResponse } from 'next/server';
 import { recordEvent } from '../../../lib/analytics';
+import { signReportToken } from '../../../lib/reportToken';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -70,7 +71,8 @@ export async function POST(request) {
     // Build Creem checkout request
     const checkoutPayload = {
       product_id: productId,
-      success_url: `${baseUrl}/report/${report_id}?status=success`,
+      // 回到报告页时必须带上所有权凭证，否则买家付款后只看到免费版视图
+    success_url: `${baseUrl}/report/${report_id}?status=success${signReportToken(report_id) ? '&k=' + signReportToken(report_id) : ''}`,
       metadata: {
         report_id: report_id,
         plan: isSubscription ? 'sub' : 'onetime',

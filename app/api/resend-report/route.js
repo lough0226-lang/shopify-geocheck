@@ -2,6 +2,7 @@
 // Customer self-service: resend report email
 import { NextResponse } from 'next/server';
 import { recordEvent } from '../../../lib/analytics';
+import { reportUrl } from '../../../lib/reportToken';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -57,12 +58,12 @@ export async function POST(request) {
       Here is your report. Click below to view it:
     </p>
     <div style="text-align:center;margin:24px 0;">
-      <a href="${siteUrl}/report/${report_id}" style="display:inline-block;background:#10b981;color:#fff;font-weight:700;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:16px;">
+      <a href="${reportUrl(siteUrl, report_id)}" style="display:inline-block;background:#10b981;color:#fff;font-weight:700;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:16px;">
         View Your Full Report
       </a>
     </div>
     <p style="color:#6b7280;font-size:13px;text-align:center;">
-      Direct link: ${siteUrl}/report/${report_id}
+      Direct link: ${reportUrl(siteUrl, report_id)}
     </p>
     <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;padding:16px;margin:20px 0;">
       <p style="color:#047857;font-size:14px;margin:0;">
