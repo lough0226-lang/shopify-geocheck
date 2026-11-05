@@ -292,7 +292,9 @@ export default function CheckPage() {
       setError(t.errorBusy);
       return;
     }
-    window.__geoAnalyzing = true;
+    // 注意：并发锁必须在校验通过之后再上。
+    // 原来在这里就先上锁，而下面「空 URL / 非法 URL / 不是商品页」三条 return 都不会释放它，
+    // 结果第一次点报错后锁永久为 true，之后每次点击都直接 return —— 表现为"按钮没反应"。
 
     setError('');
     setErrorInfo(null);
@@ -329,10 +331,18 @@ export default function CheckPage() {
               'Open the product you want to check in your store',
               'Copy the link from your browser address bar — it should contain /products/',
               'Example: https://yourstore.com/products/your-product-name',
+              'Want the whole store instead? Use the store scan: mygeocheck.com/scan',
             ],
       });
       return;
     }
+
+    // 校验通过，这里才上并发锁
+    if (window.__geoAnalyzing) {
+      setError(t.errorBusy);
+      return;
+    }
+    window.__geoAnalyzing = true;
 
     setLoading(true);
 
