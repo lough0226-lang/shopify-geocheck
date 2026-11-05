@@ -6,15 +6,45 @@
 //   任何服务器函数的超时都撑不住。一次一个，天然可断点续跑、天然有进度。
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { initDatabase, getStoreScan, saveReport, appendStoreScanDeepResult } from '../../../../lib/db';
+import { initDatabase, getStoreScan, saveReport, appendStoreScanDeepResult, getDeepUsage, incrementDeepUsage } from '../../../../lib/db';
 import { scrapeProductPage } from '../../../../lib/scraper';
 import { analyzeProduct } from '../../../../lib/openai';
 import { DEEP_QUOTA } from '../../../../lib/storeScan';
 import { recordEvent, domainFromUrl } from '../../../../lib/analytics';
+import crypto from 'node:crypto';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
+
+const VID_COOKIE = 'geo_vid';
+
+function readCookie(request, name) {
+  const raw = request.headers.get('cookie') || '';
+  for (const part of raw.split(';')) {
+    const [k, ...v] = part.trim().split('=');
+    if (k === name) return decodeURIComponent(v.join('='));
+  }
+  return null;
+}
+
+// 身份：有邮箱用邮箱（付费用户），否则用设备 cookie 的哈希。
+// 额度必须绑在"人"上 —— 绑在 scan_id 上时，用户重新扫一次就能重置额度。
+function identityFor(request, email) {
+  if (email && email.includes('@')) return { identity: `email:${email.trim().toLowerCase()}`, setCookie: null };
+  const existing = readCookie(request, VID_COOKIE);
+  if (existing && /^[a-f0-9-]{16,64}$/i.test(existing)) {
+    return { identity: `vid:${existing}`, setCookie: null };
+  }
+  const vid = crypto.randomUUID();
+  return { identity: `vid:${vid}`, setCookie: `${VID_COOKIE}=${vid}; Path=/; Max-Age=31536000; SameSite=Lax` };
+}
+
+// $29 一次性档买的是"这一次"，不分月；其余按月计
+function periodFor(plan, now = new Date()) {
+  if (plan === 'onetime') return 'lifetime';
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+}
 
 export async function POST(request) {
   let body;
@@ -42,15 +72,23 @@ export async function POST(request) {
     return NextResponse.json({ success: true, cached: true, result: cached, progress: { done: done.length, total: quota } });
   }
 
-  if (done.length >= quota) {
-    return NextResponse.json(
+  // 额度按「身份 + 期间」计，不是按 scan_id —— 否则重新扫一次就能重置
+  const { identity, setCookie } = identityFor(request, scan.email);
+  const period = periodFor(scan.plan);
+  let usedBefore = 0;
+  try { usedBefore = await getDeepUsage(identity, period); } catch (e) { console.warn('[deep] usage read failed:', e.message); }
+
+  if (usedBefore >= quota) {
+    const res = NextResponse.json(
       {
         error: 'quota_exhausted',
-        message: `This plan includes ${quota} deep analys${quota === 1 ? 'is' : 'es'}. Upgrade to analyse more products.`,
-        progress: { done: done.length, total: quota },
+        message: `This plan includes ${quota} deep analys${quota === 1 ? 'is' : 'es'} per ${period === 'lifetime' ? 'purchase' : 'month'}. Upgrade to analyse more products.`,
+        progress: { done: usedBefore, total: quota },
       },
       { status: 402 }
     );
+    if (setCookie) res.headers.append('set-cookie', setCookie);
+    return res;
   }
 
   const handles = Array.isArray(scan.handles) ? scan.handles : [];
@@ -123,11 +161,18 @@ export async function POST(request) {
     handle,
     score: entry.score,
     plan: scan.plan,
+    identity_kind: identity.split(':')[0],
   });
 
-  return NextResponse.json({
+  // 额度用量以数据库为准（原子自增），不用 scan.deep_results 的长度
+  let usedAfter = usedBefore + 1;
+  try { usedAfter = await incrementDeepUsage(identity, period, scan.plan); } catch (e) { console.warn('[deep] usage bump failed:', e.message); }
+
+  const res = NextResponse.json({
     success: true,
     result: entry,
-    progress: { done: done.length + 1, total: quota },
+    progress: { done: usedAfter, total: quota, remaining: Math.max(0, quota - usedAfter) },
   });
+  if (setCookie) res.headers.append('set-cookie', setCookie);
+  return res;
 }
