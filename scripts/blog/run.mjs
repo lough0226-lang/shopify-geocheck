@@ -207,6 +207,11 @@ async function main() {
     if (src.length < 600) { log(`跳过（来源太短）: ${item.title.slice(0, 50)}`); continue; }
 
     const nums = keyNumbers(src);
+    // 一条事实都抠不出来，就别进卡：那种选题只能靠编来写。
+    if (nums.length < 2) {
+      log(`跳过（无可引用事实，${nums.length} 条）: ${item.title.slice(0, 50)}`);
+      continue;
+    }
     const advice = await briefFromModel(item, src, titles);
     if (advice && advice.worthWriting === false) {
       log(`跳过（不值得写）: ${item.title.slice(0, 50)} — ${String(advice.reason || '').slice(0, 60)}`);
