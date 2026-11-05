@@ -1,0 +1,313 @@
+'use client';
+
+// 整店扫描页：输入店铺域名 → 规则层扫最多 200 个商品 → 汇总 + 最差清单 + 深挖入口
+//
+// 口径说明（重要）：这里的分是 Catalog readiness（规则层，确定性检查），
+// 不是报告页的 AI Visibility Score（那个要跑 7 个买家问题的模型分析）。
+// 页面上必须写清楚，否则用户会以为 65 分等于"AI 可见性 65 分"。
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useLang } from '../../lib/i18n';
+
+const COPY = {
+  en: {
+    h1: 'Scan your whole catalog',
+    sub: 'Read up to 200 product pages and check nine signals that decide whether an AI assistant can describe and recommend your products. No login, no card.',
+    ph: 'yourstore.com',
+    btn: 'Scan my store',
+    scanning: 'Reading your catalog…',
+    scoreTitle: 'Catalog readiness',
+    scoreNote: 'Rule-based check of nine signals. This is not the AI Visibility Score — that one runs a model analysis of the seven buyer questions.',
+    needsWork: 'Needs work',
+    close: 'Close',
+    good: 'Good',
+    issuesTitle: 'What shows up most often',
+    worstTitle: 'Weakest products',
+    colProduct: 'Product',
+    colScore: 'Score',
+    colIssues: 'Issues',
+    deepTitle: 'Deep analysis',
+    deepNote: 'These are the products Shopify ranks as best-selling. A deep analysis runs the seven buyer questions through a model and gives you the exact fix.',
+    deepCta: 'Analyse this product',
+    footer: 'Scanned {n} products in {ms} ms. Catalog data comes from your store’s public product feed.',
+    err: 'We could not read that catalog. Check the domain, or the store may not be on Shopify.',
+  },
+  zh: {
+    h1: '扫描你的整店商品',
+    sub: '读取最多 200 个商品页，检查决定"AI 能不能描述并推荐你的商品"的九类信号。不用注册，不用绑卡。',
+    ph: 'yourstore.com',
+    btn: '扫描我的店',
+    scanning: '正在读取商品目录…',
+    scoreTitle: '商品页可读性',
+    scoreNote: '这是九类信号的确定性检查，不是 AI Visibility Score——后者要跑 7 个买家问题的模型分析。',
+    needsWork: '需要改',
+    close: '接近',
+    good: '良好',
+    issuesTitle: '最普遍的问题',
+    worstTitle: '最弱的商品',
+    colProduct: '商品',
+    colScore: '分数',
+    colIssues: '问题',
+    deepTitle: '深度分析',
+    deepNote: '这些是 Shopify 判定为热销的商品。深度分析会把 7 个买家问题跑一遍模型，并给出可以直接粘贴的修复。',
+    deepCta: '分析这个商品',
+    footer: '共扫描 {n} 个商品，耗时 {ms} 毫秒。商品数据来自店铺公开的商品目录。',
+    err: '读不到这个商品目录。请检查域名，或者这家店不在 Shopify 上。',
+  },
+  de: {
+    h1: 'Katalog scannen',
+    sub: 'Bis zu 200 Produktseiten prüfen und neun Signale testen, die entscheiden, ob ein KI-Assistent Ihre Produkte beschreiben und empfehlen kann. Ohne Login, ohne Karte.',
+    ph: 'dein-shop.de',
+    btn: 'Shop scannen',
+    scanning: 'Katalog wird gelesen…',
+    scoreTitle: 'Katalog-Lesbarkeit',
+    scoreNote: 'Regelbasierte Prüfung von neun Signalen. Nicht der AI Visibility Score — dafür läuft eine Modellanalyse der sieben Käuferfragen.',
+    needsWork: 'Handlungsbedarf',
+    close: 'Knapp',
+    good: 'Gut',
+    issuesTitle: 'Häufigste Probleme',
+    worstTitle: 'Schwächste Produkte',
+    colProduct: 'Produkt',
+    colScore: 'Punkte',
+    colIssues: 'Probleme',
+    deepTitle: 'Tiefenanalyse',
+    deepNote: 'Diese Produkte stuft Shopify als Bestseller ein. Die Tiefenanalyse prüft die sieben Käuferfragen und liefert die konkrete Korrektur.',
+    deepCta: 'Produkt analysieren',
+    footer: '{n} Produkte in {ms} ms geprüft. Daten aus dem öffentlichen Produktfeed des Shops.',
+    err: 'Katalog nicht lesbar. Prüfen Sie die Domain — oder der Shop läuft nicht auf Shopify.',
+  },
+  fr: {
+    h1: 'Analyser tout votre catalogue',
+    sub: "Jusqu'à 200 fiches produit et neuf signaux qui décident si un assistant IA peut décrire et recommander vos produits. Sans compte, sans carte.",
+    ph: 'votreboutique.fr',
+    btn: 'Analyser ma boutique',
+    scanning: 'Lecture du catalogue…',
+    scoreTitle: 'Lisibilité du catalogue',
+    scoreNote: "Contrôle par règles de neuf signaux. Ce n'est pas le score de visibilité IA — celui-ci passe les sept questions d'acheteur dans un modèle.",
+    needsWork: 'À corriger',
+    close: 'Limite',
+    good: 'Bon',
+    issuesTitle: 'Problèmes les plus fréquents',
+    worstTitle: 'Produits les plus faibles',
+    colProduct: 'Produit',
+    colScore: 'Score',
+    colIssues: 'Problèmes',
+    deepTitle: 'Analyse approfondie',
+    deepNote: 'Ces produits sont classés meilleures ventes par Shopify. L’analyse approfondie teste les sept questions et donne la correction exacte.',
+    deepCta: 'Analyser ce produit',
+    footer: '{n} produits analysés en {ms} ms. Données issues du flux produit public de la boutique.',
+    err: "Catalogue illisible. Vérifiez le domaine, ou la boutique n'est pas sur Shopify.",
+  },
+  es: {
+    h1: 'Analiza todo tu catálogo',
+    sub: 'Hasta 200 fichas de producto y nueve señales que deciden si un asistente de IA puede describir y recomendar tus productos. Sin registro, sin tarjeta.',
+    ph: 'tutienda.com',
+    btn: 'Analizar mi tienda',
+    scanning: 'Leyendo tu catálogo…',
+    scoreTitle: 'Legibilidad del catálogo',
+    scoreNote: 'Comprobación por reglas de nueve señales. No es la puntuación de visibilidad IA: esa pasa las siete preguntas del comprador por un modelo.',
+    needsWork: 'A corregir',
+    close: 'Al límite',
+    good: 'Bien',
+    issuesTitle: 'Problemas más frecuentes',
+    worstTitle: 'Productos más débiles',
+    colProduct: 'Producto',
+    colScore: 'Puntos',
+    colIssues: 'Problemas',
+    deepTitle: 'Análisis profundo',
+    deepNote: 'Estos productos son los más vendidos según Shopify. El análisis profundo prueba las siete preguntas y da la corrección exacta.',
+    deepCta: 'Analizar este producto',
+    footer: '{n} productos analizados en {ms} ms. Datos del feed público de la tienda.',
+    err: 'No pudimos leer ese catálogo. Revisa el dominio o la tienda no está en Shopify.',
+  },
+  pt: {
+    h1: 'Analise todo o seu catálogo',
+    sub: 'Até 200 páginas de produto e nove sinais que decidem se um assistente de IA consegue descrever e recomendar seus produtos. Sem cadastro, sem cartão.',
+    ph: 'sualoja.com',
+    btn: 'Analisar minha loja',
+    scanning: 'Lendo seu catálogo…',
+    scoreTitle: 'Legibilidade do catálogo',
+    scoreNote: 'Verificação por regras de nove sinais. Não é a pontuação de visibilidade em IA — essa roda as sete perguntas do comprador num modelo.',
+    needsWork: 'A corrigir',
+    close: 'No limite',
+    good: 'Bom',
+    issuesTitle: 'Problemas mais comuns',
+    worstTitle: 'Produtos mais fracos',
+    colProduct: 'Produto',
+    colScore: 'Nota',
+    colIssues: 'Problemas',
+    deepTitle: 'Análise profunda',
+    deepNote: 'Estes são os produtos mais vendidos segundo a Shopify. A análise profunda testa as sete perguntas e entrega a correção exata.',
+    deepCta: 'Analisar este produto',
+    footer: '{n} produtos analisados em {ms} ms. Dados do feed público da loja.',
+    err: 'Não conseguimos ler esse catálogo. Verifique o domínio ou a loja não está na Shopify.',
+  },
+};
+
+export default function ScanPage() {
+  const lang = useLang();
+  const t = COPY[lang] || COPY.en;
+
+  const [domain, setDomain] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState(null);
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!domain.trim() || loading) return;
+    setLoading(true);
+    setError('');
+    setResult(null);
+    try {
+      const r = await fetch('/api/store-scan', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ domain, limit: 200 }),
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok || !j?.success) {
+        setError(j?.message || t.err);
+      } else {
+        setResult(j);
+      }
+    } catch {
+      setError(t.err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const d = result?.summary;
+  const total = d ? d.distribution.needsWork + d.distribution.close + d.distribution.good : 0;
+  const pct = (n) => (total ? Math.round((n / total) * 100) : 0);
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-12">
+      <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{t.h1}</h1>
+      <p className="text-gray-600 leading-7 mb-8">{t.sub}</p>
+
+      <form onSubmit={submit} className="flex flex-col sm:flex-row gap-3 mb-8">
+        <input
+          value={domain}
+          onChange={(e) => setDomain(e.target.value)}
+          placeholder={t.ph}
+          autoComplete="off"
+          spellCheck="false"
+          className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-primary-700 focus:ring-2 focus:ring-primary-100"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded-lg bg-primary-700 px-6 py-3 font-semibold text-white hover:bg-primary-800 disabled:opacity-60"
+        >
+          {loading ? t.scanning : t.btn}
+        </button>
+      </form>
+
+      {loading && (
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-600">
+          {t.scanning}
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+      )}
+
+      {d && (
+        <div className="space-y-8">
+          {/* 分数 */}
+          <div className="rounded-2xl border border-gray-200 p-6">
+            <div className="flex items-end gap-4 flex-wrap">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-gray-500">{t.scoreTitle}</div>
+                <div className="text-5xl font-bold text-gray-900">{d.score}</div>
+              </div>
+              <div className="text-xs text-gray-500 max-w-md leading-6">{t.scoreNote}</div>
+            </div>
+
+            {/* 分布条 */}
+            <div className="mt-6 flex h-3 overflow-hidden rounded-full bg-gray-100">
+              <div className="bg-red-500" style={{ width: pct(d.distribution.needsWork) + '%' }} />
+              <div className="bg-amber-400" style={{ width: pct(d.distribution.close) + '%' }} />
+              <div className="bg-emerald-500" style={{ width: pct(d.distribution.good) + '%' }} />
+            </div>
+            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-600">
+              <span><span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1.5" />{t.needsWork} {d.distribution.needsWork}</span>
+              <span><span className="inline-block w-2 h-2 rounded-full bg-amber-400 mr-1.5" />{t.close} {d.distribution.close}</span>
+              <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />{t.good} {d.distribution.good}</span>
+            </div>
+          </div>
+
+          {/* 最常见问题 */}
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 mb-3">{t.issuesTitle}</h2>
+            <ul className="grid sm:grid-cols-2 gap-2">
+              {Object.entries(d.issue_counts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 6)
+                .map(([code, n]) => (
+                  <li key={code} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    <code className="text-gray-700">{code}</code>
+                    <span className="font-semibold text-gray-900">{n}</span>
+                  </li>
+                ))}
+            </ul>
+          </div>
+
+          {/* 最差商品 */}
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 mb-3">{t.worstTitle}</h2>
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+                  <tr>
+                    <th className="px-4 py-2">{t.colProduct}</th>
+                    <th className="px-4 py-2 w-20">{t.colScore}</th>
+                    <th className="px-4 py-2">{t.colIssues}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.worst.slice(0, 10).map((p) => (
+                    <tr key={p.handle} className="border-t border-gray-100">
+                      <td className="px-4 py-2 text-gray-800">{p.title}</td>
+                      <td className="px-4 py-2 font-semibold">{p.score}</td>
+                      <td className="px-4 py-2 text-gray-500">{p.issues.map((i) => i.code).join(', ')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 深挖入口 */}
+          {result.deep_handles?.length > 0 && (
+            <div className="rounded-2xl border border-primary-200 bg-primary-50/40 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-2">{t.deepTitle}</h2>
+              <p className="text-sm text-gray-600 leading-6 mb-4">{t.deepNote}</p>
+              <ul className="space-y-2">
+                {result.deep_handles.map((h) => (
+                  <li key={h} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white border border-gray-200 px-3 py-2">
+                    <code className="text-xs text-gray-700">{h}</code>
+                    <Link
+                      href={`/check?url=${encodeURIComponent(`https://${result.domain}/products/${h}`)}`}
+                      className="text-sm font-semibold text-primary-700 hover:underline"
+                    >
+                      {t.deepCta} →
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <p className="text-xs text-gray-500">
+            {t.footer.replace('{n}', d.scanned).replace('{ms}', result.duration_ms)}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
