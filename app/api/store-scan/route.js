@@ -8,16 +8,14 @@ import crypto from 'crypto';
 import { normalizeDomain, fetchCatalog, summarize, DEEP_QUOTA } from '../../../lib/storeScan';
 import { saveStoreScan, getStoreScan, initDatabase } from '../../../lib/db';
 import { recordEvent } from '../../../lib/analytics';
+import { resolveScanPlan } from '../../../lib/plans';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 // 各档位的深挖额度在 lib/storeScan.js 里统一定义，避免定价页与代码各写一套。
-
-function planFromParam(v) {
-  return Object.prototype.hasOwnProperty.call(DEEP_QUOTA, v) ? v : 'free';
-}
+// 档位本身由 lib/plans.js 依据 orders 表解析，前端传什么都不作数。
 
 export async function POST(request) {
   let body;
@@ -28,13 +26,16 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Please enter a valid store domain, e.g. yourstore.com' }, { status: 400 });
   }
 
-  const plan = planFromParam(body.plan);
   const limit = Math.min(Math.max(parseInt(body.limit, 10) || 200, 1), 200);
   const email = typeof body.email === 'string' && body.email.includes('@')
     ? body.email.trim().toLowerCase()
     : null;
 
   try { await initDatabase(); } catch { /* 已有表时忽略 */ }
+
+  // 档位只认 orders 表。前端传的 plan 一律不信 ——
+  // 否则任何人改一下请求体就能拿到 20 个深挖额度。
+  const plan = await resolveScanPlan(email);
 
   const startedAt = Date.now();
   const { products, sorted } = await fetchCatalog(domain, limit);

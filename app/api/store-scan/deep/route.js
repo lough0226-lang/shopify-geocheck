@@ -10,6 +10,7 @@ import { initDatabase, getStoreScan, saveReport, appendStoreScanDeepResult, getD
 import { scrapeProductPage } from '../../../../lib/scraper';
 import { analyzeProduct } from '../../../../lib/openai';
 import { DEEP_QUOTA } from '../../../../lib/storeScan';
+import { resolveScanPlan, higherPlan } from '../../../../lib/plans';
 import { recordEvent, domainFromUrl } from '../../../../lib/analytics';
 
 export const runtime = 'nodejs';
@@ -62,7 +63,11 @@ export async function POST(request) {
   const scan = await getStoreScan(scanId);
   if (!scan) return NextResponse.json({ error: 'Scan not found' }, { status: 404 });
 
-  const quota = DEEP_QUOTA[scan.plan] || DEEP_QUOTA.free;
+  // 档位在深挖时重新解析一次：用户在扫描之后才付款，也能立刻用上新额度。
+  // 取「扫描时记录的档位」与「当前 orders 解析出的档位」中较高者。
+  const livePlan = await resolveScanPlan(scan.email);
+  const effectivePlan = higherPlan(livePlan, scan.plan);
+  const quota = DEEP_QUOTA[effectivePlan] || DEEP_QUOTA.free;
   const done = Array.isArray(scan.deep_results) ? scan.deep_results : [];
 
   // 已经挖过 → 直接返回，不重复烧钱

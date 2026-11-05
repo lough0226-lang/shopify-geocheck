@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 // 整店扫描页：输入店铺域名 → 规则层扫最多 200 个商品 → 汇总 + 最差清单 + 深挖入口
 //
@@ -36,6 +36,8 @@ const COPY = {
     deepQuota: 'Your plan deep-analysis quota is used up.',
     footer: 'Scanned {n} products in {ms} ms. Catalog data comes from your store’s public product feed.',
     err: 'We could not read that catalog. Check the domain, or the store may not be on Shopify.',
+    emailPh: 'Email (optional) — applies your paid plan',
+    emailHint: 'Already bought the $29 or $49 plan? Enter the same email and the scan unlocks 3 or 20 deep analyses.',
   },
   zh: {
     h1: '扫描你的整店商品',
@@ -62,6 +64,8 @@ const COPY = {
     deepQuota: '当前套餐的深挖额度已用完。',
     footer: '共扫描 {n} 个商品，耗时 {ms} 毫秒。商品数据来自店铺公开的商品目录。',
     err: '读不到这个商品目录。请检查域名，或者这家店不在 Shopify 上。',
+    emailPh: '邮箱（可选）—— 用于匹配已购买的套餐',
+    emailHint: '已购买 $29 或 $49 套餐？填同一个邮箱，扫描会自动解锁 3 个或 20 个深挖。',
   },
   de: {
     h1: 'Katalog scannen',
@@ -174,6 +178,7 @@ export default function ScanPage() {
   const t = COPY[lang] || COPY.en;
 
   const [domain, setDomain] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
@@ -191,7 +196,7 @@ export default function ScanPage() {
       const r = await fetch('/api/store-scan', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ domain, limit: 200 }),
+        body: JSON.stringify({ domain, email: email.trim() || null, limit: 200 }),
       });
       const j = await r.json().catch(() => null);
       if (!r.ok || !j?.success) {
@@ -246,7 +251,7 @@ export default function ScanPage() {
       <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{t.h1}</h1>
       <p className="text-gray-600 leading-7 mb-8">{t.sub}</p>
 
-      <form onSubmit={submit} className="flex flex-col sm:flex-row gap-3 mb-8">
+      <form onSubmit={submit} className="flex flex-col sm:flex-row gap-3 mb-3">
         <input
           value={domain}
           onChange={(e) => setDomain(e.target.value)}
@@ -263,6 +268,19 @@ export default function ScanPage() {
           {loading ? t.scanning : t.btn}
         </button>
       </form>
+
+      {/* 邮箱可选：填了才会按已付款记录匹配 $29 / $49 的深挖额度 */}
+      <div className="mb-8">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder={t.emailPh || COPY.en.emailPh}
+          autoComplete="email"
+          className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-primary-700 focus:ring-2 focus:ring-primary-100"
+        />
+        <p className="mt-1.5 text-xs text-gray-500">{t.emailHint || COPY.en.emailHint}</p>
+      </div>
 
       {loading && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-600">
