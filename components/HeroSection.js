@@ -11,13 +11,12 @@ function HeroInputForm({ lang, placeholder, btnText }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!url.trim()) return;
-    try {
-      new URL(url);
-    } catch {
-      return;
-    }
-    router.push('/check?url=' + encodeURIComponent(url.trim()));
+    const raw = url.trim();
+    if (!raw) return;
+
+    // 首页这一个输入框就是唯一入口：/scan 会自己判断是店铺还是单个商品。
+    // 原来直接跳 /check，导致顾客从首页进来仍然走旧的单品流程，与导航按钮指向不一致。
+    router.push('/scan?q=' + encodeURIComponent(raw));
   }
 
   return (

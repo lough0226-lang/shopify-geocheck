@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 // 整店扫描页：输入店铺域名 → 规则层扫最多 200 个商品 → 汇总 + 最差清单 + 深挖入口
 //
@@ -6,7 +6,7 @@
 // 不是报告页的 AI Visibility Score（那个要跑 7 个买家问题的模型分析）。
 // 页面上必须写清楚，否则用户会以为 65 分等于"AI 可见性 65 分"。
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLang } from '../../lib/i18n';
 
@@ -185,15 +185,29 @@ export default function ScanPage() {
   // 深挖：逐个跑，进度由调用次数驱动（一次请求只处理一个商品，避免函数超时）
   const [deepState, setDeepState] = useState({ running: false, done: [], total: 0, current: null, error: '' });
 
-  async function submit(e) {
+  // 首页的输入框会带 ?q= 过来：直接开始扫，顾客不需要再点一次
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (!q) return;
+    setDomain(q);
+    startScan(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function submit(e) {
     e.preventDefault();
     if (!domain.trim() || loading) return;
+    startScan(domain);
+  }
 
+  async function startScan(value) {
     // 一个输入框，两种意图，自动判断：
     //   含 /products/ → 这是单个商品页，直接深挖这一个（不必先扫全店）
     //   其余 → 当作店铺域名，扫全店
     // 对顾客只有一个入口，不需要理解"整店扫描"和"单品检测"的区别。
-    const raw = domain.trim();
+    const raw = (value || '').trim();
+    if (!raw) return;
     if (/\/products\/[^/?#]+/i.test(raw)) {
       const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
       window.location.href = `/check?url=${encodeURIComponent(url)}`;
