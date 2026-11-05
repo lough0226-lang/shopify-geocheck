@@ -1,13 +1,13 @@
-// 测试端点 - 验证 API 基础设施是否正常
+// 已下线（2026-11-05）：原本是无鉴权的测试口。
+// 保留文件是为了让旧链接返回 410 而不是 404，便于识别是否还有调用方。
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
-  return NextResponse.json({
-    status: 'ok',
-    hasOpenAIKey: !!process.env.OPENAI_API_KEY,
-    openaiKeyPrefix: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 8) + '...' : 'NOT SET',
-    nodeEnv: process.env.NODE_ENV,
-  });
+  return NextResponse.json({ error: 'Gone' }, { status: 410 });
+}
+
+export async function POST() {
+  return NextResponse.json({ error: 'Gone' }, { status: 410 });
 }

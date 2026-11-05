@@ -2,6 +2,7 @@
 // GET  /api/admin/health?token=xxx  → Health status
 // POST /api/admin/health?token=xxx  → Process delivery queue (retry failed emails)
 import { NextResponse } from 'next/server';
+import crypto from 'node:crypto';
 import {
   processDeliveryQueue,
   getQueueStats,
@@ -17,8 +18,16 @@ export const dynamic = 'force-dynamic';
 function verifyToken(request) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
-  const expected = process.env.HEALTH_TOKEN || 'mygeocheck-hc-2026';
-  return token === expected;
+  const expected = process.env.HEALTH_TOKEN;
+
+  // 不再提供默认值：仓库是公开的，写死默认值等于把 token 公开。
+  // 未配置时一律拒绝，宁可让监控报 401，也不要让任何人拿到健康数据。
+  if (!expected || !token) return false;
+
+  const a = Buffer.from(token);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
 }
 
 /**
