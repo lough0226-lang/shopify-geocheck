@@ -1,6 +1,7 @@
 import './globals.css';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import AnalyticsConsent from '../components/AnalyticsConsent';
 
 export const metadata = {
   metadataBase: new URL('https://mygeocheck.com'),
@@ -43,23 +44,14 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-        {/* Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-30ZHNHCX4Q"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-30ZHNHCX4Q');
-            `,
-          }}
-        />
+        {/* Google Analytics 不再直接加载：由 <AnalyticsConsent /> 在用户同意后注入。
+            未同意 = 不加载 = 不发任何数据（GDPR/PECR 要求默认拒绝）。 */}
       </head>
       <body className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <AnalyticsConsent />
         {/* Schema.org JSON-LD: Organization */}
         <script
           type="application/ld+json"

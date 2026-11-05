@@ -65,6 +65,17 @@ export default function Footer() {
               </a>
               <Link href="/privacy" className="hover:text-white transition-colors">{p.footerPrivacy}</Link>
               <Link href="/terms" className="hover:text-white transition-colors">{p.footerTerms}</Link>
+              {/* 撤回同意入口：GDPR 要求用户能随时改变或撤回同意，不能只能"同意一次" */}
+              <button
+                type="button"
+                onClick={() => {
+                  try { localStorage.removeItem('geo_cookie_consent'); } catch { /* ignore */ }
+                  window.location.reload();
+                }}
+                className="text-left hover:text-white transition-colors"
+              >
+                Cookie settings
+              </button>
             </nav>
           </div>
         </div>
