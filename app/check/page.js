@@ -841,8 +841,12 @@ export default function CheckPage() {
                     </p>
                     <div style={{ display: 'grid', gap: 12 }}>
                       {displayCompetitors.map(function(comp, i) {
-                        var isBlurred = !isUnlocked && (comp.name === 'A well-known brand in this category' || comp.domain === 'competitor-store.com');
-                        var isRealCategory = !isBlurred && !isUnlocked && comp.verified;
+                        // 竞品名和域名是公开信息，锁着没有说服力；真正值钱的是"它为什么被引用"。
+                        // 所以：名字与域名始终显示，只锁 why_they_win。
+                        var isPlaceholder = comp.name === 'A well-known brand in this category' || comp.domain === 'competitor-store.com';
+                        var showDomain = comp.domain && comp.domain !== 'competitor-store.com';
+                        var isRealCategory = !isUnlocked && comp.verified;
+                        var lockAnalysis = !isUnlocked;
                         return (
                           <div key={i} style={{
                             display: 'flex', alignItems: 'center', gap: 16,
@@ -854,11 +858,14 @@ export default function CheckPage() {
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                 <span style={{
                                   fontSize: 14, fontWeight: 600,
-                                  color: isBlurred ? '#9ca3af' : '#1f2937',
-                                  fontStyle: isBlurred ? 'italic' : 'normal',
+                                  color: isPlaceholder ? '#9ca3af' : '#1f2937',
+                                  fontStyle: isPlaceholder ? 'italic' : 'normal',
                                 }}>
-                                  {isBlurred ? tk('competitorBlurredName', 'A well-known brand in this category') : comp.name}
+                                  {comp.name}
                                 </span>
+                                {showDomain && (
+                                  <span style={{ fontSize: 12, color: '#6b7280' }}>{comp.domain}</span>
+                                )}
                                 {isRealCategory && (
                                   <span style={{
                                     fontSize: 10, fontWeight: 700, color: '#047857',
@@ -868,22 +875,22 @@ export default function CheckPage() {
                                     ✓ {tk('realCompetitorTag', 'VERIFIED SHOPIFY STORE')}
                                   </span>
                                 )}
-                                {isBlurred && <span style={{ fontSize: 16 }}>🔒</span>}
                               </div>
                               {comp.category && (
                                 <p style={{ fontSize: 11, color: '#6b7280', margin: '3px 0 0 0', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                                   {comp.category}
                                 </p>
                               )}
-                              {isBlurred && (
-                                <p style={{ fontSize: 12, color: '#9ca3af', margin: '2px 0 0 0', fontStyle: 'italic' }}>
-                                  {tk('competitorBlurredHint', 'Unlock to see the real competitor in your category')}
+                              {lockAnalysis ? (
+                                <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 0 0' }}>
+                                  🔒 {tk('competitorBlurredHint', 'Unlock to see why this competitor gets cited')}
                                 </p>
-                              )}
-                              {comp.why_they_win && (
-                                <p style={{ fontSize: 13, color: '#4b5563', margin: '6px 0 0 0', lineHeight: 1.5 }}>
-                                  {comp.why_they_win}
-                                </p>
+                              ) : (
+                                comp.why_they_win && (
+                                  <p style={{ fontSize: 13, color: '#4b5563', margin: '6px 0 0 0', lineHeight: 1.5 }}>
+                                    {comp.why_they_win}
+                                  </p>
+                                )
                               )}
                             </div>
                           </div>
