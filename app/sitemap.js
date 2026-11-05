@@ -85,6 +85,13 @@ export default function sitemap() {
       priority: 0.7,
     },
     {
+      // 整店扫描入口：这是付费产品的主入口，优先级高于单页工具
+      url: `${baseUrl}/scan`,
+      lastModified: new Date('2026-11-05'),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
       // 方法页：信任资产，也是这个站最该被 AI 引用的页面之一
       url: `${baseUrl}/methodology`,
       lastModified: new Date('2026-11-03'),
