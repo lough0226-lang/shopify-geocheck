@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 // 整店扫描页：输入店铺域名 → 规则层扫最多 200 个商品 → 汇总 + 最差清单 + 深挖入口
 //
@@ -13,8 +13,8 @@ import { useLang } from '../../lib/i18n';
 const COPY = {
   en: {
     h1: 'Scan your whole catalog',
-    sub: 'Read up to 200 product pages and check nine signals that decide whether an AI assistant can describe and recommend your products. No login, no card.',
-    ph: 'yourstore.com',
+    sub: 'Paste your store domain to check up to 200 products at once, or paste a single product URL to analyse just that page. No login, no card.',
+    ph: 'yourstore.com or a product URL',
     btn: 'Scan my store',
     scanning: 'Reading your catalog…',
     scoreTitle: 'Catalog readiness',
@@ -41,8 +41,8 @@ const COPY = {
   },
   zh: {
     h1: '扫描你的整店商品',
-    sub: '读取最多 200 个商品页，检查决定"AI 能不能描述并推荐你的商品"的九类信号。不用注册，不用绑卡。',
-    ph: 'yourstore.com',
+    sub: '粘贴店铺域名，一次检查最多 200 个商品；或粘贴单个商品页链接，只分析这一个页面。不用注册，不用绑卡。',
+    ph: 'yourstore.com or a product URL',
     btn: '扫描我的店',
     scanning: '正在读取商品目录…',
     scoreTitle: '商品页可读性',
@@ -188,6 +188,18 @@ export default function ScanPage() {
   async function submit(e) {
     e.preventDefault();
     if (!domain.trim() || loading) return;
+
+    // 一个输入框，两种意图，自动判断：
+    //   含 /products/ → 这是单个商品页，直接深挖这一个（不必先扫全店）
+    //   其余 → 当作店铺域名，扫全店
+    // 对顾客只有一个入口，不需要理解"整店扫描"和"单品检测"的区别。
+    const raw = domain.trim();
+    if (/\/products\/[^/?#]+/i.test(raw)) {
+      const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+      window.location.href = `/check?url=${encodeURIComponent(url)}`;
+      return;
+    }
+
     setLoading(true);
     setError('');
     setResult(null);
