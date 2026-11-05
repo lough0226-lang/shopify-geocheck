@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -28,12 +28,12 @@ function detectLanguage() {
 
 // Nav labels per language
 const NAV_LABELS = {
-  en: { howItWorks: 'How it works', pricing: 'Pricing', faq: 'FAQ', blog: 'Blog', tools: 'Tools', freeCheck: 'Free check', myReports: 'My reports' },
-  zh: { howItWorks: '工作原理', pricing: '价格', faq: '常见问题', blog: '博客', tools: '免费工具', freeCheck: '免费检测', myReports: '我的报告' },
-  de: { howItWorks: 'So funktioniert es', pricing: 'Preise', faq: 'FAQ', blog: 'Blog', tools: 'Tools', freeCheck: 'Gratis testen', myReports: 'Meine Berichte' },
-  fr: { howItWorks: 'Comment ça marche', pricing: 'Tarifs', faq: 'FAQ', blog: 'Blog', tools: 'Outils', freeCheck: 'Test gratuit', myReports: 'Mes rapports' },
-  es: { howItWorks: 'Cómo funciona', pricing: 'Precios', faq: 'FAQ', blog: 'Blog', tools: 'Herramientas', freeCheck: 'Prueba gratis', myReports: 'Mis informes' },
-  pt: { howItWorks: 'Como funciona', pricing: 'Preços', faq: 'FAQ', blog: 'Blog', tools: 'Ferramentas', freeCheck: 'Teste grátis', myReports: 'Meus relatórios' },
+  en: { howItWorks: 'How it works', pricing: 'Pricing', faq: 'FAQ', blog: 'Blog', tools: 'Tools', freeCheck: 'Free check', myReports: 'My reports', scan: 'Store scan' },
+  zh: { howItWorks: '工作原理', pricing: '价格', faq: '常见问题', blog: '博客', tools: '免费工具', freeCheck: '免费检测', myReports: '我的报告', scan: '整店扫描' },
+  de: { howItWorks: 'So funktioniert es', pricing: 'Preise', faq: 'FAQ', blog: 'Blog', tools: 'Tools', freeCheck: 'Gratis testen', myReports: 'Meine Berichte', scan: 'Shop-Scan' },
+  fr: { howItWorks: 'Comment ça marche', pricing: 'Tarifs', faq: 'FAQ', blog: 'Blog', tools: 'Outils', freeCheck: 'Test gratuit', myReports: 'Mes rapports', scan: 'Scan boutique' },
+  es: { howItWorks: 'Cómo funciona', pricing: 'Precios', faq: 'FAQ', blog: 'Blog', tools: 'Herramientas', freeCheck: 'Prueba gratis', myReports: 'Mis informes', scan: 'Escanear tienda' },
+  pt: { howItWorks: 'Como funciona', pricing: 'Preços', faq: 'FAQ', blog: 'Blog', tools: 'Ferramentas', freeCheck: 'Teste grátis', myReports: 'Meus relatórios', scan: 'Escanear loja' },
 };
 
 export default function Header() {
@@ -76,6 +76,9 @@ export default function Header() {
               </a>
               <Link href="/blog" className="text-sm text-gray-600 hover:text-primary-700 transition-colors">
                 {t.blog}
+              </Link>
+              <Link href="/scan" className="text-sm text-gray-600 hover:text-primary-700 transition-colors">
+                {t.scan}
               </Link>
               <Link href="/tools" className="text-sm text-gray-600 hover:text-primary-700 transition-colors">
                 {t.tools}
@@ -154,6 +157,9 @@ export default function Header() {
               </a>
               <Link href="/blog" className="text-gray-600 hover:text-primary-700 py-2" onClick={() => setMobileOpen(false)}>
                 {t.blog}
+              </Link>
+              <Link href="/scan" className="text-gray-600 hover:text-primary-700 py-2" onClick={() => setMobileOpen(false)}>
+                {t.scan}
               </Link>
               <Link href="/tools" className="text-gray-600 hover:text-primary-700 py-2" onClick={() => setMobileOpen(false)}>
                 {t.tools}

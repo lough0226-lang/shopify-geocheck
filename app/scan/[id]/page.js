@@ -6,6 +6,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getStoreScan, initDatabase } from '../../../lib/db';
+import RecheckButton from '../../../components/RecheckButton';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -84,6 +85,9 @@ export default async function ScanReportPage({ params }) {
           <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />Good {dist.ok}</span>
         </div>
       </div>
+
+      {/* 复测：用同一批商品重跑，只看页面改动带来的变化 */}
+      <RecheckButton scanId={id} />
 
       {/* 最常见问题 */}
       <h2 className="text-lg font-bold text-gray-900 mb-3">What shows up most often</h2>
