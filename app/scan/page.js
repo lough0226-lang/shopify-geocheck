@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 // 整店扫描页：输入店铺域名 → 规则层扫最多 200 个商品 → 汇总 + 最差清单 + 深挖入口
 //
@@ -222,7 +222,7 @@ export default function ScanPage() {
       const r = await fetch('/api/store-scan', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ domain, email: email.trim() || null, limit: 200 }),
+        body: JSON.stringify({ domain: raw, email: email.trim() || null, limit: 200 }),
       });
       const j = await r.json().catch(() => null);
       if (!r.ok || !j?.success) {
