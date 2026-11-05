@@ -831,6 +831,27 @@ export default function CheckPage() {
                     }].concat(competitors.slice(1));
                   }
                 }
+                // 如果三条竞品全是占位符，说明这次没识别到真实竞品。
+                // 与其展示三张一模一样的假卡片（用户一眼看出是凑数），不如诚实说一句。
+                var PLACEHOLDER_NAMES = ['A well-known brand in this category', 'Unknown Competitor'];
+                var realCompetitors = displayCompetitors.filter(function(c) {
+                  return c && PLACEHOLDER_NAMES.indexOf(c.name) === -1 && c.domain !== 'competitor-store.com' && c.domain !== 'competitor.com';
+                });
+                if (displayCompetitors.length > 0 && realCompetitors.length === 0) {
+                  return (
+                    <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
+                      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
+                        {'🏆 ' + tk('competitorTitle', "Who's winning these searches")}
+                      </h2>
+                      <p style={{ fontSize: 13, color: '#6b7280', margin: 0, lineHeight: 1.6 }}>
+                        {tk(
+                          'competitorNotFound',
+                          "We could not identify specific competitors for this product type yet. That usually means the category is narrow, or the assistants did not return a consistent set of brands for these queries. We would rather show you nothing than a placeholder."
+                        )}
+                      </p>
+                    </div>
+                  );
+                }
                 return displayCompetitors.length > 0 && (
                   <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
                     <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
