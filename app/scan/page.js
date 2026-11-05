@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 // 整店扫描页：输入店铺域名 → 规则层扫最多 200 个商品 → 汇总 + 最差清单 + 深挖入口
 //
@@ -42,7 +42,7 @@ const COPY = {
   zh: {
     h1: '扫描你的整店商品',
     sub: '粘贴店铺域名，一次检查最多 200 个商品；或粘贴单个商品页链接，只分析这一个页面。不用注册，不用绑卡。',
-    ph: 'yourstore.com or a product URL',
+    ph: 'yourstore.com 或商品页链接',
     btn: '扫描我的店',
     scanning: '正在读取商品目录…',
     scoreTitle: '商品页可读性',
