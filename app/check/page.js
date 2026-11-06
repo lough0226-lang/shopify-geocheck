@@ -744,6 +744,36 @@ export default function CheckPage() {
                     <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 4, marginTop: 0 }}>{productName}</h2>
                     {storeName && <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 10, marginTop: 0 }}>{storeName}</p>}
                     <p style={{ color: '#4b5563', margin: '0 0 12px 0' }}>{scoreMessage}</p>
+                    {/* 能力边界：必须让用户知道这是模型判断，不是实时查询 AI */}
+                    <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 14px 0', lineHeight: 1.6 }}>
+                      {tk('modelNote', 'This score comes from a model reading your page and answering seven buyer questions. It is not a live query to ChatGPT or Perplexity. AI answers vary by day, by country and by model version.')}
+                    </p>
+
+                    {/* 60 秒自己验证：让结论可被顾客亲手核对，这比我们多写十句解释都强 */}
+                    {buyerQueries.length > 0 && (
+                      <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 14 }}>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: '#1f2937', margin: '0 0 6px 0' }}>
+                          {'\u{1F50D} ' + tk('selfCheckTitle', 'Check this yourself in 60 seconds')}
+                        </p>
+                        <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 10px 0', lineHeight: 1.6 }}>
+                          {tk('selfCheckNote', 'Paste these questions into ChatGPT, Perplexity and Google AI Overviews, and note whether your store appears. That count, tracked weekly, is the number that matters. A single check tells you almost nothing.')}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={function (e) {
+                            var qs = buyerQueries.join(String.fromCharCode(10));
+                            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(qs);
+                            var btn = e.currentTarget;
+                            var old = btn.textContent;
+                            btn.textContent = tk('copied', 'Copied');
+                            setTimeout(function () { btn.textContent = old; }, 1600);
+                          }}
+                          style={{ fontSize: 12, fontWeight: 600, color: '#1d4ed8', background: '#fff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}
+                        >
+                          {tk('copyQuestions', 'Copy all 7 questions')}
+                        </button>
+                      </div>
+                    )}
                     {industryBenchmark && industryBenchmark.percentile != null && (
                       <div style={{ background: '#f0f9ff', borderRadius: 12, padding: 16, border: '1px solid #bae6fd' }}>
                         <p style={{ fontSize: 15, color: '#0369a1', fontWeight: 600, margin: 0 }}>
@@ -858,7 +888,7 @@ export default function CheckPage() {
                       {'🏆 ' + tk('competitorTitle', "Who's winning these searches")}
                     </h2>
                     <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>
-                      {tk('competitorSubtitle', 'Top competitors appearing in AI search results for your product type.')}
+                      {tk('competitorSubtitleReport', 'Likely competitors for this category. Names are inferred by a model and the domain is checked to exist. They are not observed citations from an AI answer.')}
                     </p>
                     <div style={{ display: 'grid', gap: 12 }}>
                       {displayCompetitors.map(function(comp, i) {
