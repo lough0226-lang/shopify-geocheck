@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 // 2026-11-06：竞品栏整体关闭。A/B 两方案都只能给出推断结论或单次快照，
 // 用户自己拿去问 AI 一旦对不上，就会认为我们在编造。宁可不显示。
@@ -441,14 +441,15 @@ export default function ReportPage() {
           </div>
         )}
 
-        {/* 3.5 Recheck — unlocked only */}
-        {isUnlocked && (
+        {/* 3.5 Recheck — 免费报告也给 1 次（决策见 api/recheck/route.js 的注释） */}
+        {(
           <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #f3f4f6', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', padding: 32, marginBottom: 24 }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
               {'\u{1F501}'} Follow-up Recheck
             </h2>
             <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 20, marginTop: 0 }}>
               Re-run the SAME buyer questions against the current page to see if your changes improved AI visibility. Your original 7 queries are locked so results stay comparable.
+              {!isUnlocked && <strong style={{ display: 'block', marginTop: 8, color: '#92400e' }}>Free reports include one re-check. Paid reports include re-checks on day 2, 7, 14 and 30.</strong>}
             </p>
 
             {!recheckResult && (
@@ -783,6 +784,24 @@ export default function ReportPage() {
           }}>
             {'Analyze Another Product \u2192'}
           </a>
+        </div>
+      </div>
+
+      {/* 可追溯性：谁做的、依据什么方法、这是什么时候的读数 */}
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 48px' }}>
+        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 20, fontSize: 12, color: '#6b7280', lineHeight: 1.8 }}>
+          <p style={{ margin: 0 }}>
+            Analysed
+            {report.analysed_at ? ' on ' + new Date(report.analysed_at).toISOString().slice(0, 16).replace('T', ' ') + ' UTC' : ''}
+            {' by Luo Xin, who has worked in website SEO since 2003 and builds My GEO Check.'}
+          </p>
+          <p style={{ margin: '4px 0 0 0' }}>
+            AI answers change from day to day. Treat this as a reading at a point in time, not a permanent verdict.
+            {' '}
+            <a href="/methodology" style={{ color: '#1d4ed8' }}>How the score is calculated</a>
+            {' · '}
+            <a href="/about" style={{ color: '#1d4ed8' }}>About the author</a>
+          </p>
         </div>
       </div>
     </div>

@@ -56,7 +56,11 @@ export async function POST(request) {
       if (typeof ensureFoundingSchema === 'function') await ensureFoundingSchema();
     } catch (e) {}
 
-    // 权限：报告已解锁 / 有订阅 / 创始用户
+    // 权限：报告已解锁 / 有订阅 / 创始用户 / 免费报告的第 1 次复检
+    //
+    // 2026-11-06 调整：免费用户也允许复检 1 次。
+    // 理由：如果顾客无法验证"改完之后分数会不会动"，他就只能信我们一次，
+    // 而这正是我们最不该要求的东西。1 次复检的成本约一分钱，换来的是可验证性。
     let allowed = original.unlocked === true;
     if (!allowed && customerEmail) {
       try {
@@ -69,9 +73,15 @@ export async function POST(request) {
       }
     }
 
-    if (!allowed) {
+    const priorSnapshots = Array.isArray(original.recheck_snapshots) ? original.recheck_snapshots : [];
+    const freeRecheckAvailable = !allowed && priorSnapshots.length === 0;
+
+    if (!allowed && !freeRecheckAvailable) {
       return NextResponse.json(
-        { error: 'Recheck is available for founding customers and paid reports', error_type: 'NOT_ELIGIBLE' },
+        {
+          error: 'Free reports include one re-check. Paid reports include re-checks on day 2, 7, 14 and 30.',
+          error_type: 'RECHECK_USED',
+        },
         { status: 403 }
       );
     }

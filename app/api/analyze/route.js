@@ -705,6 +705,9 @@ export async function GET(request) {
     lang: report.lang || 'en',
     unlocked: showFullContent,
     report_id: reportId,
+    // 分析时间：报告必须能回答"这是什么时候的读数"，
+    // 因为 AI 回答天天在变，没有时间戳的分数是不可追溯的。
+    analysed_at: report.created_at ? new Date(report.created_at).toISOString() : null,
   };
 
   if (showFullContent) {
