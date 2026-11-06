@@ -543,7 +543,23 @@ export default function ReportPage() {
           </div>
         )}
 
-        {competitors.length > 0 && (
+        {competitors.length > 0 && competitors.every(function(c) {
+          // 全是占位符 = 这次没识别到真实竞品。与其渲染三张一样的假卡片，不如说一句实话。
+          return !c || c.name === 'A well-known brand in this category' || c.domain === 'competitor-store.com' || c.domain === 'competitor.com' || c.name === 'Unknown Competitor';
+        }) && (
+          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
+              {'\u{1F3C6}'} {tk('competitorTitle', "Who's winning these searches")}
+            </h2>
+            <p style={{ fontSize: 13, color: '#6b7280', margin: 0, lineHeight: 1.6 }}>
+              {tk('competitorNotFound', 'We could not identify specific competitors for this product type yet. We would rather show you nothing than a placeholder.')}
+            </p>
+          </div>
+        )}
+
+        {competitors.length > 0 && !competitors.every(function(c) {
+          return !c || c.name === 'A well-known brand in this category' || c.domain === 'competitor-store.com' || c.domain === 'competitor.com' || c.name === 'Unknown Competitor';
+        }) && (
           <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 20, marginTop: 0 }}>
               {'\u{1F3C6}'} {tk('competitorTitle', "Who's winning these searches")}
