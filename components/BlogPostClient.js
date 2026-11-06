@@ -100,6 +100,13 @@ export default function BlogPostClient({ slug }) {
             {ui.backToBlog}
           </Link>
 
+          {/* 中文用户看到英文原文时必须说明，否则会以为切换语言坏了 */}
+          {isZh && !zh && (
+            <div className="mb-4 rounded-lg border border-amber-300/40 bg-amber-400/15 px-4 py-3 text-sm text-amber-100">
+              这篇文章暂时只有英文版本，以下是原文。我们优先翻译被读得最多的文章。
+            </div>
+          )}
+
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight mb-4">{title}</h1>
           <p className="text-primary-200 text-lg mb-6">{excerpt}</p>
 
