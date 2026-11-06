@@ -1,4 +1,8 @@
-'use client';
+﻿'use client';
+
+// 2026-11-06：竞品栏整体关闭。A/B 两方案都只能给出推断结论或单次快照，
+// 用户自己拿去问 AI 一旦对不上，就会认为我们在编造。宁可不显示。
+const SHOW_COMPETITORS = false;
 
 import { useState, useEffect, useRef, Component } from 'react';
 import { useRouter } from 'next/navigation';
@@ -867,7 +871,7 @@ export default function CheckPage() {
                 var realCompetitors = displayCompetitors.filter(function(c) {
                   return c && PLACEHOLDER_NAMES.indexOf(c.name) === -1 && c.domain !== 'competitor-store.com' && c.domain !== 'competitor.com';
                 });
-                if (displayCompetitors.length > 0 && realCompetitors.length === 0) {
+                if (SHOW_COMPETITORS && displayCompetitors.length > 0 && realCompetitors.length === 0) {
                   return (
                     <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
                       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
@@ -882,7 +886,7 @@ export default function CheckPage() {
                     </div>
                   );
                 }
-                return displayCompetitors.length > 0 && (
+                return SHOW_COMPETITORS && displayCompetitors.length > 0 && (
                   <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
                     <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8, marginTop: 0 }}>
                       {'🏆 ' + tk('competitorTitle', "Who's winning these searches")}

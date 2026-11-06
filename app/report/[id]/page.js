@@ -1,4 +1,8 @@
-'use client';
+﻿'use client';
+
+// 2026-11-06：竞品栏整体关闭。A/B 两方案都只能给出推断结论或单次快照，
+// 用户自己拿去问 AI 一旦对不上，就会认为我们在编造。宁可不显示。
+const SHOW_COMPETITORS = false;
 
 import { useState, useEffect } from 'react';
 
@@ -543,7 +547,7 @@ export default function ReportPage() {
           </div>
         )}
 
-        {competitors.length > 0 && competitors.every(function(c) {
+        {SHOW_COMPETITORS && competitors.length > 0 && competitors.every(function(c) {
           // 全是占位符 = 这次没识别到真实竞品。与其渲染三张一样的假卡片，不如说一句实话。
           return !c || c.name === 'A well-known brand in this category' || c.domain === 'competitor-store.com' || c.domain === 'competitor.com' || c.name === 'Unknown Competitor';
         }) && (
@@ -557,7 +561,7 @@ export default function ReportPage() {
           </div>
         )}
 
-        {competitors.length > 0 && !competitors.every(function(c) {
+        {SHOW_COMPETITORS && competitors.length > 0 && !competitors.every(function(c) {
           return !c || c.name === 'A well-known brand in this category' || c.domain === 'competitor-store.com' || c.domain === 'competitor.com' || c.name === 'Unknown Competitor';
         }) && (
           <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6', padding: 32, marginBottom: 24 }}>
