@@ -3,9 +3,19 @@
 import Link from 'next/link';
 import { useLang, PAGE_CONTENT } from '../lib/i18n';
 
+const FOOTER_LINKS = {
+  en: ['About', 'Methodology', 'Refund policy', '{fl[3]}'],
+  zh: ['关于我们', '方法论', '退款政策', 'Cookie 设置'],
+  de: ['Über uns', 'Methodik', 'Rückerstattung', 'Cookie-Einstellungen'],
+  fr: ['À propos', 'Méthodologie', 'Remboursement', 'Réglages cookies'],
+  es: ['Acerca de', 'Metodología', 'Reembolsos', 'Ajustes de cookies'],
+  pt: ['Sobre', 'Metodologia', 'Reembolsos', 'Configurações de cookies'],
+};
+
 export default function Footer() {
   const lang = useLang();
   const p = PAGE_CONTENT[lang] || PAGE_CONTENT.en;
+  const fl = FOOTER_LINKS[lang] || FOOTER_LINKS.en;
   const year = new Date().getFullYear();
 
   return (
@@ -57,9 +67,9 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-3 text-sm">{p.footerSupport}</h4>
             <nav className="flex flex-col gap-2 text-sm text-primary-300">
-              <Link href="/about" className="hover:text-white transition-colors">About</Link>
-              <Link href="/methodology" className="hover:text-white transition-colors">Methodology</Link>
-              <Link href="/refund-policy" className="hover:text-white transition-colors">Refund policy</Link>
+              <Link href="/about" className="hover:text-white transition-colors">{fl[0]}</Link>
+              <Link href="/methodology" className="hover:text-white transition-colors">{fl[1]}</Link>
+              <Link href="/refund-policy" className="hover:text-white transition-colors">{fl[2]}</Link>
               <a href="mailto:hello@mygeocheck.com" className="hover:text-white transition-colors">
                 {p.footerContact}
               </a>

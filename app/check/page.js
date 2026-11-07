@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 // 2026-11-06：竞品栏整体关闭。A/B 两方案都只能给出推断结论或单次快照，
 // 用户自己拿去问 AI 一旦对不上，就会认为我们在编造。宁可不显示。
@@ -510,6 +510,13 @@ export default function CheckPage() {
       clearInterval(msgInterval);
       setLoading(false);
       window.__geoAnalyzing = false; // Release concurrent lock
+      // 失败时把页面拉回顶部：倒计时一消失，用户会以为"什么都没发生"。
+      // 错误信息在表单上方，不滚上去看不见。
+      try {
+        if (typeof window !== 'undefined') {
+          window.setTimeout(function () { window.scrollTo({ top: 0, behavior: 'smooth' }); }, 60);
+        }
+      } catch (e) {}
     });
   }
 
