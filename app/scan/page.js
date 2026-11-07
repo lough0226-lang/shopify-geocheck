@@ -33,7 +33,8 @@ const COPY = {
     deepRunning: 'Analysing',
     deepStart: 'Run deep analysis',
     deepOpen: 'Open report',
-    deepQuota: 'The free plan includes one deep analysis per month, and this month\u2019s is used. Nothing is broken. It resets on the 1st, or you can unlock more right away.',
+    quotaLine: 'Free plan: one deep analysis per store per month. The catalogue scan is unlimited.',
+    deepQuota: 'This store was already analysed this month, so you are seeing that result. Nothing is broken. To analyse more products in the same store, unlock a paid plan.',
     footer: 'Scanned {n} products in {ms} ms. Catalog data comes from your store’s public product feed.',
     err: 'We could not read that catalog. Check the domain, or the store may not be on Shopify.',
     emailPh: 'Email (optional) — applies your paid plan',
@@ -61,7 +62,8 @@ const COPY = {
     deepRunning: '分析中',
     deepStart: '开始深度分析',
     deepOpen: '打开报告',
-    deepQuota: '免费套餐每月包含 1 次深度分析，本月这一次已经用掉了，网站没有问题。下个月 1 日会重置，也可以现在升级立即获得更多。',
+    quotaLine: '免费套餐：每个店铺每月 1 次深度分析；整店扫描不限次数。',
+    deepQuota: '这家店本月已经分析过一次，你看到的就是那次的结果，网站没有问题。想分析同一家店的更多商品，需要升级套餐。',
     footer: '共扫描 {n} 个商品，耗时 {ms} 毫秒。商品数据来自店铺公开的商品目录。',
     err: '读不到这个商品目录。请检查域名，或者这家店不在 Shopify 上。',
     emailPh: '邮箱（可选）—— 用于匹配已购买的套餐',
@@ -394,6 +396,9 @@ export default function ScanPage() {
               <h2 className="text-lg font-bold text-gray-900 mb-2">{t.deepTitle}</h2>
               <p className="text-sm text-gray-600 leading-6 mb-4">{t.deepNote}</p>
 
+              <p className="mb-3 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-600">
+                {t.quotaLine || 'Free plan: one deep analysis per store per month. Rules-based catalogue scan is unlimited.'}
+              </p>
               <button
                 type="button"
                 onClick={() => runDeep()}

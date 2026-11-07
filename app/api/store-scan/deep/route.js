@@ -6,7 +6,7 @@
 //   任何服务器函数的超时都撑不住。一次一个，天然可断点续跑、天然有进度。
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { initDatabase, getStoreScan, saveReport, appendStoreScanDeepResult, getDeepUsage, incrementDeepUsage } from '../../../../lib/db';
+import { initDatabase, getStoreScan, saveReport, appendStoreScanDeepResult, getDeepUsage, incrementDeepUsage, getApiUsage } from '../../../../lib/db';
 import { scrapeProductPage } from '../../../../lib/scraper';
 import { analyzeProduct } from '../../../../lib/openai';
 import { DEEP_QUOTA } from '../../../../lib/storeScan';
@@ -59,6 +59,24 @@ export async function POST(request) {
   }
 
   try { await initDatabase(); } catch { /* ignore */ }
+
+  // 全局预算闸：用户看不见，但它拦住"刷 1000 个不同店铺"这种攻击。
+  // 80% 只记日志，95% 直接拒绝 —— 限流在服务端，不靠客户端自觉。
+  try {
+    const now = new Date();
+    const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+    const usage = await getApiUsage(month);
+    const budget = parseFloat(process.env.MONTHLY_API_BUDGET || '50');
+    const pct = budget > 0 ? (Number(usage?.estimated_cost || 0) / budget) * 100 : 0;
+    if (pct >= 95) {
+      console.error('[deep] budget guard: ' + pct.toFixed(0) + '% of monthly budget used, refusing');
+      return NextResponse.json(
+        { error: 'capacity', message: 'Deep analysis is temporarily paused while we raise capacity. Please try again later.' },
+        { status: 503 }
+      );
+    }
+    if (pct >= 80) console.warn('[deep] budget warning: ' + pct.toFixed(0) + '%');
+  } catch (e) { /* 预算查询失败不阻断主流程 */ }
 
   const scan = await getStoreScan(scanId);
   if (!scan) return NextResponse.json({ error: 'Scan not found' }, { status: 404 });
