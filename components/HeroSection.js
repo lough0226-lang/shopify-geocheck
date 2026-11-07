@@ -39,6 +39,17 @@ function HeroInputForm({ lang, placeholder, btnText }) {
   );
 }
 
+// 首页输入框下面那行小字。
+// 关键：明确「店铺域名和商品链接都能粘」，否则用户会以为只能粘商品页。
+const HERO_HINT = {
+  en: 'Paste a store domain to scan the whole catalogue, or a product link to check one item.',
+  zh: '粘店铺域名可以扫整店，粘商品链接只查这一个商品。',
+  de: 'Shop-Domain fuer den ganzen Katalog, oder Produktlink fuer ein einzelnes Produkt.',
+  fr: 'Un domaine pour tout le catalogue, ou un lien produit pour un seul article.',
+  es: 'Un dominio para todo el catalogo, o un enlace de producto para uno solo.',
+  pt: 'Um dominio para todo o catalogo, ou um link de produto para um so item.',
+};
+
 export default function HeroSection() {
   const lang = useLang();
   const p = PAGE_CONTENT[lang] || PAGE_CONTENT.en;
@@ -73,6 +84,9 @@ export default function HeroSection() {
         {/* Hero Input + CTA */}
         <div className="max-w-xl mx-auto mb-6">
           <HeroInputForm lang={lang} placeholder={p.heroInputPlaceholder} btnText={p.heroCta} />
+        <p className="text-center text-xs text-white/60 mt-3">
+          {HERO_HINT[lang] || HERO_HINT.en}
+        </p>
         </div>
 
         {/* Secondary links */}

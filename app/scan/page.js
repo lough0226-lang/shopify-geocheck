@@ -229,6 +229,9 @@ export default function ScanPage() {
         setError(j?.message || t.err);
       } else {
         setResult(j);
+        // 扫完直接跑第 1 个深挖，不让用户再点一次 —— 免费额度本来就有 1 次，
+        // 早 5 秒看到完整诊断，比让他自己去找按钮重要。
+        if (j.deep_handles && j.deep_handles.length) runDeep(j);
       }
     } catch {
       setError(t.err);
@@ -237,9 +240,10 @@ export default function ScanPage() {
     }
   }
 
-  async function runDeep() {
-    if (!result || deepState.running) return;
-    const handles = (result.deep_handles || []).slice(0, result.deep_quota);
+  async function runDeep(scanArg) {
+    const scan = scanArg || result;
+    if (!scan || deepState.running) return;
+    const handles = (scan.deep_handles || []).slice(0, scan.deep_quota);
     setDeepState({ running: true, done: [], total: handles.length, current: null, error: '' });
 
     const done = [];
@@ -250,7 +254,7 @@ export default function ScanPage() {
         const r = await fetch('/api/store-scan/deep', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ scan_id: result.scan_id, handle, lang }),
+          body: JSON.stringify({ scan_id: scan.scan_id, handle, lang }),
         });
         const j = await r.json().catch(() => null);
         if (j?.success) {
@@ -392,7 +396,7 @@ export default function ScanPage() {
 
               <button
                 type="button"
-                onClick={runDeep}
+                onClick={() => runDeep()}
                 disabled={deepState.running}
                 className="mb-4 rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-800 disabled:opacity-60"
               >
