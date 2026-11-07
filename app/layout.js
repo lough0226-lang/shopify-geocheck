@@ -1,4 +1,5 @@
 import './globals.css';
+import { cookies } from 'next/headers';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AnalyticsConsent from '../components/AnalyticsConsent';
@@ -36,8 +37,17 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  // 从 cookie 读取用户语言，让服务端就能输出正确的 <html lang>。
+  // 为什么必须这么做：原来固定 lang="en"，中文用户即使站内已切中文，
+  // Chrome 仍会判断"这是英文页面"并弹翻译提示。
+  let serverLang = 'en';
+  try {
+    const raw = (typeof cookies === 'function' ? cookies().get('geo_lang') : null);
+    if (raw && ['en', 'zh', 'de', 'fr', 'es', 'pt'].includes(raw.value)) serverLang = raw.value;
+  } catch (e) {}
+
   return (
-    <html lang="en">
+    <html lang={serverLang}>
       <head>
         <link rel="icon" href="/favicon.png" type="image/png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

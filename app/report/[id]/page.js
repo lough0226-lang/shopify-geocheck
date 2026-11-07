@@ -135,13 +135,18 @@ export default function ReportPage() {
           <div style={{ fontSize: 64, marginBottom: 16 }}>{'\u{1F614}'}</div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 12 }}>Report Not Available</h1>
           <p style={{ color: '#4b5563', marginBottom: 24 }}>{error}</p>
-          <a href="/check" style={{
+          {/* 死胡同要给出路：没带 id 的时候最可能是从扫描结果点过来的，
+              先让他回扫描页（那里有刚跑完的结果），再给单品检测入口。 */}
+          <a href="/scan" style={{
             display: 'inline-block', background: '#10b981', color: '#fff',
             fontWeight: 600, padding: '12px 32px', borderRadius: 8,
             textDecoration: 'none', fontSize: 16,
           }}>
-            Run a New Analysis
+            Back to store scan
           </a>
+          <p style={{ marginTop: 14, fontSize: 13, color: '#6b7280' }}>
+            or <a href="/check" style={{ color: '#1d4ed8' }}>run a new single-product analysis</a>
+          </p>
         </div>
       </div>
     );

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -52,6 +52,9 @@ export default function Header() {
   function handleLangChange(newLang) {
     setLang(newLang);
     localStorage.setItem('geo_lang', newLang);
+    // 同时写 cookie：服务端渲染时才能输出正确的 <html lang>，
+    // 否则首屏永远是英文，Chrome 会一直弹「要翻译英文页面吗」。
+    try { document.cookie = 'geo_lang=' + newLang + '; path=/; max-age=31536000; samesite=lax'; } catch (e) {}
     window.dispatchEvent(new CustomEvent('languagechange', { detail: { lang: newLang } }));
     setLangOpen(false);
   }
