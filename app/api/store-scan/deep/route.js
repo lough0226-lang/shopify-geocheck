@@ -77,8 +77,14 @@ export async function POST(request) {
   }
 
   // 额度按「身份 + 期间」计，不是按 scan_id —— 否则重新扫一次就能重置
-  const { identity, setCookie } = identityFor(request, scan.email);
+  // 额度键改为「店铺域名 + 期间」，不再用设备 cookie。
+  //
+  // 为什么：cookie / IP 是弱身份，清一下就能绕——技术上既不可靠，
+  // 也让懂行的人觉得这个限制是摆设。而"同一个店这个月算过了"
+  // 在逻辑上是缓存，不是限制：任何人来都拿到同一份结果，成本也只烧一次。
+  const identity = 'domain:' + String(scan.store_domain || '').toLowerCase();
   const period = periodFor(scan.plan);
+  const setCookie = null;
   let usedBefore = 0;
   try { usedBefore = await getDeepUsage(identity, period); } catch (e) { console.warn('[deep] usage read failed:', e.message); }
 
@@ -86,7 +92,7 @@ export async function POST(request) {
     const res = NextResponse.json(
       {
         error: 'quota_exhausted',
-        message: `This plan includes ${quota} deep analys${quota === 1 ? 'is' : 'es'} per ${period === 'lifetime' ? 'purchase' : 'month'}. Upgrade to analyse more products.`,
+        message: `This store was already analysed this ${period === 'lifetime' ? 'purchase' : 'month'}. The result from that run is what you see here. Upgrade to analyse more products in the same store.`,
         progress: { done: usedBefore, total: quota },
       },
       { status: 402 }
