@@ -113,9 +113,13 @@ export default async function ScanReportPage({ params }) {
                 <span className="text-sm text-gray-800">{d.product_name || d.handle}</span>
                 <span className="flex items-center gap-3">
                   <span className="text-sm font-bold text-gray-900">{d.score}</span>
-                  <Link href={`/report/${d.report_id}`} className="text-sm font-semibold text-primary-700 hover:underline">
-                    Open report →
-                  </Link>
+                  {d.report_id ? (
+                    <Link href={`/report/${d.report_id}`} className="text-sm font-semibold text-primary-700 hover:underline">
+                      Open report →
+                    </Link>
+                  ) : (
+                    <span className="text-xs text-gray-400">report link unavailable</span>
+                  )}
                 </span>
               </li>
             ))}

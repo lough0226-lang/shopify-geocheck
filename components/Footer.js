@@ -84,7 +84,7 @@ export default function Footer() {
                 }}
                 className="text-left hover:text-white transition-colors"
               >
-                Cookie settings
+                {fl ? fl[3] : 'Cookie settings'}
               </button>
             </nav>
           </div>
