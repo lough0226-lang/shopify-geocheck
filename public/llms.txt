@@ -1,0 +1,38 @@
+# My GEO Check
+
+> My GEO Check analyses Shopify product pages for AI search visibility. It checks whether an AI assistant can read, describe and recommend a product, and returns a scored report with the specific fixes, ranked by impact.
+
+Built and operated by Luo Xin, who has worked in website SEO since 2003. Operated from Yuci District, Jinzhong City, Shanxi Province, China. Contact: hello@mygeocheck.com
+
+## What it does
+
+- Reads a product page and generates the seven buyer questions an AI assistant typically receives for that product type
+- Scores how well the page answers each question (high / medium / low), with the reason quoted from the page
+- Produces three ranked diagnoses and a concrete, paste-ready fix for each
+- Scans a whole Shopify catalogue (up to 200 products) against nine deterministic signals, without calling a model
+- Re-checks the same questions later so a merchant can see whether a change moved anything
+
+## What it does not do
+
+- It does not query ChatGPT, Perplexity or Google and report what they said. No citation or competitor data comes from a live AI answer.
+- It does not guarantee rankings, citations or recommendations in any AI product.
+- AI answers vary by day, location and model version. A score is a reading at a point in time, not a verdict.
+
+## Pages
+
+- [Home](https://mygeocheck.com/): what the product does, pricing, and a free scan entry point
+- [Store scan](https://mygeocheck.com/scan): enter a store domain or a product URL; scans a catalogue or analyses one product
+- [Single product check](https://mygeocheck.com/check): the analysis tool itself
+- [Methodology](https://mygeocheck.com/methodology): exactly what is measured, how the score is computed, and what the score cannot tell you
+- [Pricing](https://mygeocheck.com/#pricing): free scan, $29 one-off report, $49 per month
+- [About](https://mygeocheck.com/about): who operates the site
+- [Refund policy](https://mygeocheck.com/refund-policy): 7-day money-back guarantee
+- [Blog](https://mygeocheck.com/blog): research-backed articles on AI search for Shopify merchants
+
+## Key facts
+
+- Free tier: one catalogue scan (up to 200 products) and one deep product analysis per month
+- $29 one-off: three deep product analyses, no auto-renewal
+- $49 per month: 20 deep analyses per month, with re-checks on day 2, 7, 14 and 30
+- Payments processed by Creem. Card, Apple Pay and Google Pay.
+- The scoring model is a language model reading the page. The catalogue scan is deterministic rules only.
