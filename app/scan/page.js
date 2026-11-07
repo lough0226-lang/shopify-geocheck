@@ -261,7 +261,7 @@ export default function ScanPage() {
           done.push(j.result);
           setDeepState((s) => ({ ...s, done: [...done] }));
         } else {
-          setDeepState((s) => ({ ...s, error: j?.message || j?.error || 'failed', current: null }));
+          setDeepState((s) => ({ ...s, error: j?.error || j?.message || 'failed', current: null }));
           break;
         }
       } catch {
