@@ -29,7 +29,7 @@ const TOOL_LABELS = {
 };
 
 const FOOTER_LINKS = {
-  en: ['About', 'Methodology', 'Refund policy', '{fl[3]}'],
+  en: ['About', 'Methodology', 'Refund policy', 'Cookie settings'],
   zh: ['关于我们', '方法论', '退款政策', 'Cookie 设置'],
   de: ['Über uns', 'Methodik', 'Rückerstattung', 'Cookie-Einstellungen'],
   fr: ['À propos', 'Méthodologie', 'Remboursement', 'Réglages cookies'],
